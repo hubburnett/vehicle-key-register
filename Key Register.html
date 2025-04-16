@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle Keys Sign In / Sign Out Register</title>
+  <style>
+    /* Reset some defaults */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fdf1e9;
+      color: #333;
+      padding: 20px;
+    }
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { font-size: 2rem; color: #fa7b25; margin-bottom: 10px; }
+    header h2 { font-size: 1.2rem; font-weight: normal; }
+    /* Container styles */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    /* Welcome Screen */
+    #welcomeScreen {
+      text-align: center;
+      padding: 40px;
+    }
+    #welcomeScreen img {
+      max-width: 200px;
+      margin-bottom: 20px;
+    }
+    #welcomeScreen button {
+      font-size: 1.5rem;
+      padding: 10px 20px;
+      border: none;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    /* Main Interface */
+    #mainInterface {
+      display: none;
+    }
+    .panels {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 20px;
+      width: 320px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .panel h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label { 
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 1.1rem;
+      color: #fff;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-sign-out { background-color: #d9534f; }
+    .btn-sign-in  { background-color: #5cb85c; }
+    .btn-logs     { background-color: #6c757d; }
+    /* Log Viewer Styles */
+    #logViewer {
+      display: none;
+    }
+    #logViewer table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    #logViewer th,
+    #logViewer td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    #logViewer th { background-color: #f4f4f4; }
+    #logViewer button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      margin-right: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-export { background-color: #007bff; color: #fff; }
+    .btn-back { background-color: #6c757d; color: #fff; }
+    /* Modal (Success Popup) */
+    #successModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    #successModal .modal-content {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      min-width: 300px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    #successModal .modal-content h3 {
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen">
+      <!-- If hub_logo.png exists in your folder, it will load; otherwise, it shows placeholder text -->
+      <img src="hub_logo.png" onerror="this.onerror=null; this.style.display='none';" alt="HUB LOGO">
+      <div id="logoPlaceholder" style="font-size:32px; margin-bottom:20px;">[HUB LOGO]</div>
+      <h1>HUB COMMUNITY NETWORK</h1>
+      <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
+      <br>
+      <button id="continueBtn">Tap to Continue</button>
+    </div>
+
+    <!-- Main Interface -->
+    <div id="mainInterface">
+      <div class="panels">
+        <!-- Sign Out Panel -->
+        <div class="panel" id="signOutPanel">
+          <h3>Sign Out</h3>
+          <div class="form-group">
+            <label for="outName">Name</label>
+            <input type="text" id="outName" placeholder="Name">
+          </div>
+          <div class="form-group">
+            <label for="outParticipant">Participant</label>
+            <input type="text" id="outParticipant" placeholder="Participant">
+          </div>
+          <div class="form-group">
+            <label for="outVehicle">Vehicle</label>
+            <select id="outVehicle">
+              <option value="">-- Select Vehicle --</option>
+              <option value="HiAce Bus - 656 GG4">HiAce Bus - 656 GG4</option>
+              <option value="Outlander - 717 AM3">Outlander - 717 AM3</option>
+              <option value="Outlander - 402 LG5">Outlander - 402 LG5</option>
+            </select>
+          </div>
+          <button class="btn btn-sign-out" id="btnSignOut">Sign Out</button>
+        </div>
+
+        <!-- Sign In Panel -->
+        <div class="panel" id="signInPanel">
+          <h3>Sign In</h3>
+          <div class="form-group">
+            <label for="inName">Select Name</label>
+            <select id="inName">
+              <option value="">-- Select Name --</option>
+              <!-- Values added dynamically from keys signed out -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="returnDate">Return Date (DD-MM-YYYY)</label>
+            <input type="text" id="returnDate">
+          </div>
+          <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
+          <br>
+          <button class="btn btn-logs" id="btnLogs">Logs</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Viewer -->
+    <div id="logViewer">
+      <h2>Log Viewer</h2>
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Participant</th>
+            <th>Vehicle</th>
+            <th>Date Out</th>
+            <th>Time Out</th>
+            <th>Date In</th>
+            <th>Time In</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Log rows are inserted dynamically -->
+        </tbody>
+      </table>
+      <button class="btn btn-export" id="btnExportLog">Export Log</button>
+      <button class="btn btn-back" id="btnBack">Back</button>
+    </div>
+  </div>
+
+  <!-- Modal for Success Popup -->
+  <div id="successModal">
+    <div class="modal-content">
+      <h3 id="successMessage"></h3>
+    </div>
+  </div>
+
+  <script>
+    // Data stores
+    const vehicles = {
+      "HiAce Bus - 656 GG4": [],
+      "Outlander - 717 AM3": [],
+      "Outlander - 402 LG5": []
+    };
+    const keysOut = {};  // Maps name to record { Participant, Vehicle, DateOut, TimeOut }
+    const logData = [];  // Array of log objects
+
+    // Timer variables
+    let autoResetTimer = null;
+    let exitTimer = null; // For detecting long press on Logs button
+
+    // Helper functions to format date and time as in the Python script.
+    function formatDate(date) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0'); // January is 0!
+      const yyyy = date.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    }
+    function formatTime(date) {
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
+    // Show success modal popup with an auto-close feature (in seconds)
+    function showSuccessPopup(message, seconds = 3) {
+      const modal = document.getElementById('successModal');
+      document.getElementById('successMessage').innerText = message;
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, seconds * 1000);
+    }
+
+    // ------------------ Screen Handling ------------------
+    function setupWelcomeScreen() {
+      clearTimeout(autoResetTimer);
+      document.getElementById('welcomeScreen').style.display = 'block';
+      document.getElementById('mainInterface').style.display = 'none';
+      document.getElementById('logViewer').style.display = 'none';
+    }
+    function setupMainInterface() {
+      clearTimeout(autoResetTimer);
+      document.getElementById('welcomeScreen').style.display = 'none';
+      document.getElementById('mainInterface').style.display = 'block';
+      document.getElementById('logViewer').style.display = 'none';
+
+      // Reset Sign Out fields
+      document.getElementById('outName').value = '';
+      document.getElementById('outParticipant').value = '';
+      document.getElementById('outVehicle').value = '';
+
+      // Reset Sign In fields
+      updateReturnNames();
+      document.getElementById('inName').value = '';
+      document.getElementById('returnDate').value = formatDate(new Date());
+
+      // Auto-reset to welcome screen after 100 seconds (100000ms)
+      autoResetTimer = setTimeout(setupWelcomeScreen, 100000);
+    }
+    function showLogViewer() {
+      clearTimeout(autoResetTimer);
+      document.getElementById('mainInterface').style.display = 'none';
+      document.getElementById('logViewer').style.display = 'block';
+      renderLogTable();
+    }
+
+    // ------------------ Sign Out / Sign In Functions ------------------
+    function signOut() {
+      const name = document.getElementById('outName').value.trim();
+      const participant = document.getElementById('outParticipant').value.trim();
+      const vehicle = document.getElementById('outVehicle').value;
+
+      if (!name || !participant || !vehicle) {
+        alert("Please fill out all fields.");
+        return;
+      }
+      if (vehicles[vehicle].length >= 2) {
+        alert(`All keys for ${vehicle} are currently signed out.`);
+        return;
+      }
+
+      const now = new Date();
+      const dateOut = formatDate(now);
+      const timeOut = formatTime(now);
+
+      // Record key sign out
+      vehicles[vehicle].push(name);
+      keysOut[name] = { Participant: participant, Vehicle: vehicle, DateOut: dateOut, TimeOut: timeOut };
+      logData.push({
+        Name: name,
+        Participant: participant,
+        Vehicle: vehicle,
+        "Date Out": dateOut,
+        "Time Out": timeOut,
+        "Date In": "",
+        "Time In": ""
+      });
+      showSuccessPopup(`${name} signed out a key for ${vehicle}.`);
+      
+      // Clear the input fields
+      document.getElementById('outName').value = '';
+      document.getElementById('outParticipant').value = '';
+      document.getElementById('outVehicle').value = '';
+
+      // Update the return names dropdown
+      updateReturnNames();
+    }
+
+    function signIn() {
+      const name = document.getElementById('inName').value.trim();
+      const returnDate = document.getElementById('returnDate').value.trim();
+      if (!name) {
+        alert("Please select a name.");
+        return;
+      }
+      if (!keysOut[name]) {
+        alert("This name does not have a key signed out.");
+        return;
+      }
+      const now = new Date();
+      const timeIn = formatTime(now);
+      const record = keysOut[name];
+      // Remove key record from keysOut and from the vehicle's sign-out array
+      delete keysOut[name];
+      const idx = vehicles[record.Vehicle].indexOf(name);
+      if (idx > -1) {
+        vehicles[record.Vehicle].splice(idx, 1);
+      }
+      // Update the existing log record with sign in info
+      for (let entry of logData) {
+        if (entry.Name === name && entry.Vehicle === record.Vehicle && entry["Date In"] === "") {
+          entry["Date In"] = returnDate;
+          entry["Time In"] = timeIn;
+          break;
+        }
+      }
+      showSuccessPopup(`${name} returned a key for ${record.Vehicle}.`);
+
+      // Clear sign in fields and update dropdown
+      document.getElementById('inName').value = '';
+      document.getElementById('returnDate').value = formatDate(new Date());
+      updateReturnNames();
+    }
+
+    // Update the Sign In name selection dropdown
+    function updateReturnNames() {
+      const inNameSelect = document.getElementById('inName');
+      // Clear current options except the placeholder
+      inNameSelect.innerHTML = '<option value="">-- Select Name --</option>';
+      for (let name in keysOut) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        inNameSelect.appendChild(opt);
+      }
+    }
+
+    // ------------------ Log Viewer and Export Functions ------------------
+    function renderLogTable() {
+      const tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = '';
+      logData.forEach(entry => {
+        const row = document.createElement('tr');
+        for (let key of ["Name", "Participant", "Vehicle", "Date Out", "Time Out", "Date In", "Time In"]) {
+          const td = document.createElement('td');
+          td.textContent = entry[key];
+          row.appendChild(td);
+        }
+        tbody.appendChild(row);
+      });
+    }
+
+    // Prompt export: if confirmed, download CSV; else, simulate email sending.
+    function exportLogPrompt() {
+      const exportAsFile = confirm("Export as file?\nClick OK to export as a CSV file, or Cancel to simulate emailing to hub@burnett.net.au.");
+      if (exportAsFile) {
+        exportLogToCSV();
+      } else {
+        emailLog();
+      }
+    }
+    function exportLogToCSV() {
+      if (logData.length === 0) {
+        alert("No logs to export.");
+        return;
+      }
+      // Build CSV content
+      const headers = ["Name", "Participant", "Vehicle", "Date Out", "Time Out", "Date In", "Time In"];
+      const csvRows = [];
+      csvRows.push(headers.join(','));
+      logData.forEach(entry => {
+        const row = headers.map(h => `"${entry[h] || ''}"`);
+        csvRows.push(row.join(','));
+      });
+      const csvString = csvRows.join('\n');
+      // Create a blob and download
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vehicle_key_log_${new Date().toISOString().slice(0,16).replace(/[:-]/g,'')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      alert("Log exported as CSV file.");
+    }
+    function emailLog() {
+      // Simulate email functionality
+      alert("Simulated email sent to hub@burnett.net.au.");
+    }
+
+    // ------------------ Exit Timer for Logs Button ------------------
+    // When the Logs button is pressed and held for 4 seconds, exit the app.
+    function startExitTimer() {
+      exitTimer = setTimeout(exitApp, 4000);
+    }
+    function cancelExitTimer() {
+      if (exitTimer) {
+        clearTimeout(exitTimer);
+        exitTimer = null;
+      }
+    }
+    function exitApp() {
+      alert("Exiting application...");
+      // In a browser, we cannot close the tab programmatically in most cases.
+      // For simulation, we simply reload the page.
+      location.reload();
+    }
+
+    // ------------------ Event Listeners ------------------
+    document.getElementById('continueBtn').addEventListener('click', setupMainInterface);
+    document.getElementById('btnSignOut').addEventListener('click', signOut);
+    document.getElementById('btnSignIn').addEventListener('click', signIn);
+    document.getElementById('btnLogs').addEventListener('mousedown', startExitTimer);
+    document.getElementById('btnLogs').addEventListener('mouseup', () => {
+      cancelExitTimer();
+      showLogViewer();
+    });
+    document.getElementById('btnBack').addEventListener('click', setupMainInterface);
+    document.getElementById('btnExportLog').addEventListener('click', exportLogPrompt);
+
+    // Start on the welcome screen.
+    setupWelcomeScreen();
+  </script>
+</body>
+</html>
