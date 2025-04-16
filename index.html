@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Viewport meta tag for responsiveness on touchscreen devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vehicle Keys Sign In / Sign Out Register</title>
   <style>
-    /* Reset some defaults */
+    /* Reset defaults */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Arial, sans-serif;
       background-color: #fdf1e9;
       color: #333;
       padding: 20px;
+      -webkit-tap-highlight-color: transparent;
     }
     header { text-align: center; margin-bottom: 20px; }
     header h1 { font-size: 2rem; color: #fa7b25; margin-bottom: 10px; }
@@ -31,7 +34,7 @@
     }
     #welcomeScreen button {
       font-size: 1.5rem;
-      padding: 10px 20px;
+      padding: 15px 25px;
       border: none;
       background-color: #007bff;
       color: #fff;
@@ -73,7 +76,7 @@
     }
     input[type="text"], select {
       width: 100%;
-      padding: 8px;
+      padding: 12px;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -81,7 +84,7 @@
     .btn {
       display: block;
       width: 100%;
-      padding: 12px;
+      padding: 15px;
       border: none;
       border-radius: 4px;
       font-size: 1.1rem;
@@ -96,6 +99,11 @@
     #logViewer {
       display: none;
     }
+    #logViewer h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
     #logViewer table {
       width: 100%;
       border-collapse: collapse;
@@ -106,10 +114,11 @@
       padding: 10px;
       border: 1px solid #ccc;
       text-align: left;
+      font-size: 1rem;
     }
     #logViewer th { background-color: #f4f4f4; }
     #logViewer button {
-      padding: 10px 20px;
+      padding: 15px 25px;
       font-size: 1rem;
       margin-right: 10px;
       border: none;
@@ -147,7 +156,6 @@
   <div class="container">
     <!-- Welcome Screen -->
     <div id="welcomeScreen">
-      <!-- If hub_logo.png exists in your folder, it will load; otherwise, it shows placeholder text -->
       <img src="hub_logo.png" onerror="this.onerror=null; this.style.display='none';" alt="HUB LOGO">
       <div id="logoPlaceholder" style="font-size:32px; margin-bottom:20px;">[HUB LOGO]</div>
       <h1>HUB COMMUNITY NETWORK</h1>
@@ -251,7 +259,7 @@
     // Helper functions to format date and time as in the Python script.
     function formatDate(date) {
       const dd = String(date.getDate()).padStart(2, '0');
-      const mm = String(date.getMonth() + 1).padStart(2, '0'); // January is 0!
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
       const yyyy = date.getFullYear();
       return `${dd}-${mm}-${yyyy}`;
     }
@@ -385,7 +393,6 @@
     // Update the Sign In name selection dropdown
     function updateReturnNames() {
       const inNameSelect = document.getElementById('inName');
-      // Clear current options except the placeholder
       inNameSelect.innerHTML = '<option value="">-- Select Name --</option>';
       for (let name in keysOut) {
         const opt = document.createElement('option');
@@ -424,7 +431,6 @@
         alert("No logs to export.");
         return;
       }
-      // Build CSV content
       const headers = ["Name", "Participant", "Vehicle", "Date Out", "Time Out", "Date In", "Time In"];
       const csvRows = [];
       csvRows.push(headers.join(','));
@@ -433,7 +439,6 @@
         csvRows.push(row.join(','));
       });
       const csvString = csvRows.join('\n');
-      // Create a blob and download
       const blob = new Blob([csvString], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -444,12 +449,10 @@
       alert("Log exported as CSV file.");
     }
     function emailLog() {
-      // Simulate email functionality
       alert("Simulated email sent to hub@burnett.net.au.");
     }
 
     // ------------------ Exit Timer for Logs Button ------------------
-    // When the Logs button is pressed and held for 4 seconds, exit the app.
     function startExitTimer() {
       exitTimer = setTimeout(exitApp, 4000);
     }
@@ -461,20 +464,31 @@
     }
     function exitApp() {
       alert("Exiting application...");
-      // In a browser, we cannot close the tab programmatically in most cases.
-      // For simulation, we simply reload the page.
       location.reload();
     }
 
     // ------------------ Event Listeners ------------------
+    // Welcome screen button
     document.getElementById('continueBtn').addEventListener('click', setupMainInterface);
+
+    // Sign Out and Sign In buttons
     document.getElementById('btnSignOut').addEventListener('click', signOut);
     document.getElementById('btnSignIn').addEventListener('click', signIn);
-    document.getElementById('btnLogs').addEventListener('mousedown', startExitTimer);
-    document.getElementById('btnLogs').addEventListener('mouseup', () => {
+
+    // Logs button: add both mouse and touch event listeners for optimal touchscreen compatibility.
+    const btnLogs = document.getElementById('btnLogs');
+    btnLogs.addEventListener('mousedown', startExitTimer);
+    btnLogs.addEventListener('mouseup', () => {
       cancelExitTimer();
       showLogViewer();
     });
+    btnLogs.addEventListener('touchstart', startExitTimer);
+    btnLogs.addEventListener('touchend', () => {
+      cancelExitTimer();
+      showLogViewer();
+    });
+
+    // Log viewer controls
     document.getElementById('btnBack').addEventListener('click', setupMainInterface);
     document.getElementById('btnExportLog').addEventListener('click', exportLogPrompt);
 
