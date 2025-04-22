@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -30,24 +30,26 @@
       color: #fff;
       border-radius: 5px;
       cursor: pointer;
-    }
-
-    /* Main Interface */
-    #mainInterface { display: none; }
+  
+    /* Container for both panels */
     .panels {
-      display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
-      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;           /* small gap between panels */
     }
+      
+    /* Individual Sign Out / Sign In boxes */
     .panel {
-      background: #fff; border: 1px solid #ccc; border-radius: 6px;
-      padding: 20px; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      width: 288px;        /* 10% smaller than the original 320px */
+      /* keep the rest of your styling here */
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .panel h3 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
-    .form-group { margin-bottom: 15px; }
-    label {
-      display: block; margin-bottom: 5px; font-weight: bold;
-      font-size: 1.1rem;
-    }
+    
     input[type="text"], select {
       width: 100%; padding: 12px; font-size: 1rem;
       border: 1px solid #ccc; border-radius: 4px;
