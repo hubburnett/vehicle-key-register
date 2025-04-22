@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -30,28 +30,24 @@
       color: #fff;
       border-radius: 5px;
       cursor: pointer;
+    }
 
-    }
-  
-    /* Container for both panels */
+    /* Main Interface */
+    #mainInterface { display: none; }
     .panels {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;           /* small gap between panels */
+      display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 20px;
     }
-      
-    /* Individual Sign Out / Sign In boxes */
     .panel {
-      width: 288px;        /* 10% smaller than the original 320px */
-      /* keep the rest of your styling here */
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background: #fff; border: 1px solid #ccc; border-radius: 6px;
+      padding: 20px; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    
+    .panel h3 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+    .form-group { margin-bottom: 15px; }
+    label {
+      display: block; margin-bottom: 5px; font-weight: bold;
+      font-size: 1.1rem;
+    }
     input[type="text"], select {
       width: 100%; padding: 12px; font-size: 1rem;
       border: 1px solid #ccc; border-radius: 4px;
@@ -117,6 +113,7 @@
     <!-- Welcome -->
     <div id="welcomeScreen">
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
+      <div id="logoPlaceholder" style="font-size:32px; margin-bottom:20px;">[HUB LOGO]</div>
       <h1>HUB COMMUNITY NETWORK</h1>
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
       <br>
