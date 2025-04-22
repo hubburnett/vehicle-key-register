@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Viewport meta tag for responsiveness on touchscreen devices -->
+  <!-- ensure responsiveness on tablets -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vehicle Keys Sign In / Sign Out Register</title>
   <style>
-    /* Reset defaults */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Arial, sans-serif;
@@ -18,20 +17,11 @@
     header { text-align: center; margin-bottom: 20px; }
     header h1 { font-size: 2rem; color: #fa7b25; margin-bottom: 10px; }
     header h2 { font-size: 1.2rem; font-weight: normal; }
-    /* Container styles */
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+    .container { max-width: 1200px; margin: 0 auto; }
+
     /* Welcome Screen */
-    #welcomeScreen {
-      text-align: center;
-      padding: 40px;
-    }
-    #welcomeScreen img {
-      max-width: 200px;
-      margin-bottom: 20px;
-    }
+    #welcomeScreen { text-align: center; padding: 40px; }
+    #welcomeScreen img { max-width: 200px; margin-bottom: 20px; }
     #welcomeScreen button {
       font-size: 1.5rem;
       padding: 15px 25px;
@@ -41,122 +31,88 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
     /* Main Interface */
-    #mainInterface {
-      display: none;
-    }
+    #mainInterface { display: none; }
     .panels {
-      display: flex;
-      gap: 2rem;
-      flex-wrap: wrap;
-      justify-content: center;
+      display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
       margin-bottom: 20px;
     }
     .panel {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 20px;
-      width: 320px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background: #fff; border: 1px solid #ccc; border-radius: 6px;
+      padding: 20px; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .panel h3 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label { 
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
+    .panel h3 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+    .form-group { margin-bottom: 15px; }
+    label {
+      display: block; margin-bottom: 5px; font-weight: bold;
       font-size: 1.1rem;
     }
     input[type="text"], select {
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      width: 100%; padding: 12px; font-size: 1rem;
+      border: 1px solid #ccc; border-radius: 4px;
     }
     .btn {
-      display: block;
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 4px;
-      font-size: 1.1rem;
-      color: #fff;
-      cursor: pointer;
+      display: block; width: 100%; padding: 15px;
+      border: none; border-radius: 4px;
+      font-size: 1.1rem; color: #fff; cursor: pointer;
       margin-top: 10px;
     }
     .btn-sign-out { background-color: #d9534f; }
     .btn-sign-in  { background-color: #5cb85c; }
     .btn-logs     { background-color: #6c757d; }
-    /* Log Viewer Styles */
-    #logViewer {
-      display: none;
-    }
+
+    /* Log Viewer */
+    #logViewer { display: none; }
     #logViewer h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
+      text-align: center; margin-bottom: 20px; font-size: 1.5rem;
     }
     #logViewer table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
+      width: 100%; border-collapse: collapse; margin-bottom: 20px;
     }
-    #logViewer th,
-    #logViewer td {
-      padding: 10px;
-      border: 1px solid #ccc;
-      text-align: left;
+    #logViewer th, #logViewer td {
+      padding: 10px; border: 1px solid #ccc; text-align: left;
       font-size: 1rem;
     }
     #logViewer th { background-color: #f4f4f4; }
     #logViewer button {
-      padding: 15px 25px;
-      font-size: 1rem;
-      margin-right: 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+      padding: 15px 25px; font-size: 1rem; margin-right: 10px;
+      border: none; border-radius: 4px; cursor: pointer;
     }
     .btn-export { background-color: #007bff; color: #fff; }
-    .btn-back { background-color: #6c757d; color: #fff; }
-    /* Modal (Success Popup) */
+    .btn-back   { background-color: #6c757d; color: #fff; }
+
+    /* Success Modal */
     #successModal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
+      display: none; position: fixed; z-index: 1000;
       left: 0; top: 0; right: 0; bottom: 0;
       background-color: rgba(0,0,0,0.5);
-      align-items: center;
-      justify-content: center;
+      align-items: center; justify-content: center;
     }
     #successModal .modal-content {
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      text-align: center;
-      min-width: 300px;
+      background-color: #fff; padding: 30px; border-radius: 8px;
+      text-align: center; min-width: 300px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.3);
     }
     #successModal .modal-content h3 {
-      margin-bottom: 20px;
-      font-size: 1.4rem;
-      color: #28a745;
+      margin-bottom: 20px; font-size: 1.4rem; color: #28a745;
     }
   </style>
 </head>
 <body>
+
+  <!-- catch JS errors on old Safari -->
+  <script>
+    window.onerror = function(msg, url, line) {
+      alert("JS error: " + msg + "\n(line " + line + ")");
+      return true;
+    };
+  </script>
+
   <div class="container">
-    <!-- Welcome Screen -->
+    <!-- Welcome -->
     <div id="welcomeScreen">
-      <img src="hub_logo.png" onerror="this.onerror=null; this.style.display='none';" alt="HUB LOGO">
+      <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <div id="logoPlaceholder" style="font-size:32px; margin-bottom:20px;">[HUB LOGO]</div>
       <h1>HUB COMMUNITY NETWORK</h1>
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
@@ -164,10 +120,10 @@
       <button id="continueBtn">Tap to Continue</button>
     </div>
 
-    <!-- Main Interface -->
+    <!-- Main UI -->
     <div id="mainInterface">
       <div class="panels">
-        <!-- Sign Out Panel -->
+        <!-- Sign Out -->
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
           <div class="form-group">
@@ -190,14 +146,13 @@
           <button class="btn btn-sign-out" id="btnSignOut">Sign Out</button>
         </div>
 
-        <!-- Sign In Panel -->
+        <!-- Sign In -->
         <div class="panel" id="signInPanel">
           <h3>Sign In</h3>
           <div class="form-group">
             <label for="inName">Select Name</label>
             <select id="inName">
               <option value="">-- Select Name --</option>
-              <!-- Values added dynamically from keys signed out -->
             </select>
           </div>
           <div class="form-group">
@@ -211,288 +166,230 @@
       </div>
     </div>
 
-    <!-- Log Viewer -->
+    <!-- Logs Viewer -->
     <div id="logViewer">
       <h2>Log Viewer</h2>
       <table id="logTable">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Participant</th>
-            <th>Vehicle</th>
-            <th>Date Out</th>
-            <th>Time Out</th>
-            <th>Date In</th>
-            <th>Time In</th>
+            <th>Name</th><th>Participant</th><th>Vehicle</th>
+            <th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- Log rows are inserted dynamically -->
-        </tbody>
+        <tbody></tbody>
       </table>
       <button class="btn btn-export" id="btnExportLog">Export Log</button>
       <button class="btn btn-back" id="btnBack">Back</button>
     </div>
   </div>
 
-  <!-- Modal for Success Popup -->
+  <!-- Success Popup -->
   <div id="successModal">
     <div class="modal-content">
       <h3 id="successMessage"></h3>
     </div>
   </div>
 
+  <!-- ES5 JavaScript -->
   <script>
     // Data stores
-    const vehicles = {
+    var vehicles = {
       "HiAce Bus - 656 GG4": [],
       "Outlander - 717 AM3": [],
       "Outlander - 402 LG5": []
     };
-    const keysOut = {};  // Maps name to record { Participant, Vehicle, DateOut, TimeOut }
-    const logData = [];  // Array of log objects
+    var keysOut = {};
+    var logData = [];
+    var autoResetTimer, exitTimer;
 
-    // Timer variables
-    let autoResetTimer = null;
-    let exitTimer = null; // For detecting long press on Logs button
-
-    // Helper functions to format date and time as in the Python script.
-    function formatDate(date) {
-      const dd = String(date.getDate()).padStart(2, '0');
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const yyyy = date.getFullYear();
-      return `${dd}-${mm}-${yyyy}`;
+    // helpers
+    function pad2(n){ return (n<10? "0"+n : n); }
+    function formatDate(d){
+      return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear();
     }
-    function formatTime(date) {
-      const hh = String(date.getHours()).padStart(2, '0');
-      const mm = String(date.getMinutes()).padStart(2, '0');
-      return `${hh}:${mm}`;
+    function formatTime(d){
+      return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
     }
 
-    // Show success modal popup with an auto-close feature (in seconds)
-    function showSuccessPopup(message, seconds = 3) {
-      const modal = document.getElementById('successModal');
-      document.getElementById('successMessage').innerText = message;
+    // popup
+    function showSuccessPopup(msg, secs){
+      secs = secs || 3;
+      var modal = document.getElementById('successModal');
+      document.getElementById('successMessage').innerText = msg;
       modal.style.display = 'flex';
-      setTimeout(() => {
+      setTimeout(function(){
         modal.style.display = 'none';
-      }, seconds * 1000);
+      }, secs*1000);
     }
 
-    // ------------------ Screen Handling ------------------
-    function setupWelcomeScreen() {
+    // screens
+    function setupWelcomeScreen(){
       clearTimeout(autoResetTimer);
       document.getElementById('welcomeScreen').style.display = 'block';
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
     }
-    function setupMainInterface() {
+    function setupMainInterface(){
       clearTimeout(autoResetTimer);
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
       document.getElementById('logViewer').style.display = 'none';
 
-      // Reset Sign Out fields
-      document.getElementById('outName').value = '';
-      document.getElementById('outParticipant').value = '';
-      document.getElementById('outVehicle').value = '';
-
-      // Reset Sign In fields
+      document.getElementById('outName').value = "";
+      document.getElementById('outParticipant').value = "";
+      document.getElementById('outVehicle').value = "";
       updateReturnNames();
-      document.getElementById('inName').value = '';
+      document.getElementById('inName').value = "";
       document.getElementById('returnDate').value = formatDate(new Date());
 
-      // Auto-reset to welcome screen after 100 seconds (100000ms)
       autoResetTimer = setTimeout(setupWelcomeScreen, 100000);
     }
-    function showLogViewer() {
+    function showLogViewer(){
       clearTimeout(autoResetTimer);
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'block';
       renderLogTable();
     }
 
-    // ------------------ Sign Out / Sign In Functions ------------------
-    function signOut() {
-      const name = document.getElementById('outName').value.trim();
-      const participant = document.getElementById('outParticipant').value.trim();
-      const vehicle = document.getElementById('outVehicle').value;
-
-      if (!name || !participant || !vehicle) {
-        alert("Please fill out all fields.");
-        return;
+    // sign out
+    function signOut(){
+      var name = document.getElementById('outName').value.trim(),
+          part = document.getElementById('outParticipant').value.trim(),
+          vehicle = document.getElementById('outVehicle').value;
+      if(!name || !part || !vehicle){
+        alert("Please fill out all fields."); return;
       }
-      if (vehicles[vehicle].length >= 2) {
-        alert(`All keys for ${vehicle} are currently signed out.`);
-        return;
+      if(vehicles[vehicle].length >= 2){
+        alert("All keys for " + vehicle + " are currently signed out."); return;
       }
-
-      const now = new Date();
-      const dateOut = formatDate(now);
-      const timeOut = formatTime(now);
-
-      // Record key sign out
+      var now = new Date(),
+          dOut = formatDate(now),
+          tOut = formatTime(now);
       vehicles[vehicle].push(name);
-      keysOut[name] = { Participant: participant, Vehicle: vehicle, DateOut: dateOut, TimeOut: timeOut };
+      keysOut[name] = {
+        Participant: part, Vehicle: vehicle,
+        DateOut: dOut, TimeOut: tOut
+      };
       logData.push({
-        Name: name,
-        Participant: participant,
-        Vehicle: vehicle,
-        "Date Out": dateOut,
-        "Time Out": timeOut,
-        "Date In": "",
-        "Time In": ""
+        Name: name, Participant: part, Vehicle: vehicle,
+        "Date Out": dOut, "Time Out": tOut,
+        "Date In": "", "Time In": ""
       });
-      showSuccessPopup(`${name} signed out a key for ${vehicle}.`);
-      
-      // Clear the input fields
-      document.getElementById('outName').value = '';
-      document.getElementById('outParticipant').value = '';
-      document.getElementById('outVehicle').value = '';
-
-      // Update the return names dropdown
+      showSuccessPopup(name + " signed out a key for " + vehicle + ".");
+      document.getElementById('outName').value = "";
+      document.getElementById('outParticipant').value = "";
+      document.getElementById('outVehicle').value = "";
       updateReturnNames();
     }
 
-    function signIn() {
-      const name = document.getElementById('inName').value.trim();
-      const returnDate = document.getElementById('returnDate').value.trim();
-      if (!name) {
-        alert("Please select a name.");
-        return;
+    // sign in
+    function signIn(){
+      var sel = document.getElementById('inName'),
+          name = sel.value,
+          ret = document.getElementById('returnDate').value.trim();
+      if(!name){
+        alert("Please select a name."); return;
       }
-      if (!keysOut[name]) {
-        alert("This name does not have a key signed out.");
-        return;
+      if(!keysOut[name]){
+        alert("This name does not have a key signed out."); return;
       }
-      const now = new Date();
-      const timeIn = formatTime(now);
-      const record = keysOut[name];
-      // Remove key record from keysOut and from the vehicle's sign-out array
+      var now = new Date(), tIn = formatTime(now),
+          rec = keysOut[name];
       delete keysOut[name];
-      const idx = vehicles[record.Vehicle].indexOf(name);
-      if (idx > -1) {
-        vehicles[record.Vehicle].splice(idx, 1);
-      }
-      // Update the existing log record with sign in info
-      for (let entry of logData) {
-        if (entry.Name === name && entry.Vehicle === record.Vehicle && entry["Date In"] === "") {
-          entry["Date In"] = returnDate;
-          entry["Time In"] = timeIn;
+      var idx = vehicles[rec.Vehicle].indexOf(name);
+      if(idx > -1) vehicles[rec.Vehicle].splice(idx,1);
+      for(var i=0;i<logData.length;i++){
+        var e = logData[i];
+        if(e.Name===name && e.Vehicle===rec.Vehicle && e["Date In"]===""){
+          e["Date In"] = ret;
+          e["Time In"] = tIn;
           break;
         }
       }
-      showSuccessPopup(`${name} returned a key for ${record.Vehicle}.`);
-
-      // Clear sign in fields and update dropdown
-      document.getElementById('inName').value = '';
+      showSuccessPopup(name + " returned a key for " + rec.Vehicle + ".");
+      sel.value = ""; 
       document.getElementById('returnDate').value = formatDate(new Date());
       updateReturnNames();
     }
 
-    // Update the Sign In name selection dropdown
-    function updateReturnNames() {
-      const inNameSelect = document.getElementById('inName');
-      inNameSelect.innerHTML = '<option value="">-- Select Name --</option>';
-      for (let name in keysOut) {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        inNameSelect.appendChild(opt);
+    // populate return names
+    function updateReturnNames(){
+      var sel = document.getElementById('inName');
+      sel.innerHTML = '<option value="">-- Select Name --</option>';
+      for(var n in keysOut){
+        var o = document.createElement('option');
+        o.value = n; o.textContent = n;
+        sel.appendChild(o);
       }
     }
 
-    // ------------------ Log Viewer and Export Functions ------------------
-    function renderLogTable() {
-      const tbody = document.querySelector('#logTable tbody');
+    // render logs
+    function renderLogTable(){
+      var tbody = document.querySelector('#logTable tbody');
       tbody.innerHTML = '';
-      logData.forEach(entry => {
-        const row = document.createElement('tr');
-        for (let key of ["Name", "Participant", "Vehicle", "Date Out", "Time Out", "Date In", "Time In"]) {
-          const td = document.createElement('td');
-          td.textContent = entry[key];
+      for(var i=0;i<logData.length;i++){
+        var entry = logData[i],
+            row = document.createElement('tr'),
+            keys = ["Name","Participant","Vehicle","Date Out","Time Out","Date In","Time In"];
+        for(var j=0;j<keys.length;j++){
+          var td = document.createElement('td');
+          td.textContent = entry[keys[j]];
           row.appendChild(td);
         }
         tbody.appendChild(row);
-      });
+      }
     }
 
-    // Prompt export: if confirmed, download CSV; else, simulate email sending.
-    function exportLogPrompt() {
-      const exportAsFile = confirm("Export as file?\nClick OK to export as a CSV file, or Cancel to simulate emailing to hub@burnett.net.au.");
-      if (exportAsFile) {
-        exportLogToCSV();
-      } else {
-        emailLog();
-      }
+    // export/email
+    function exportLogPrompt(){
+      var ok = confirm("Export as file?\nOK=CSV, Cancel=email.");
+      if(ok) exportLogToCSV(); else emailLog();
     }
-    function exportLogToCSV() {
-      if (logData.length === 0) {
-        alert("No logs to export.");
-        return;
+    function exportLogToCSV(){
+      if(logData.length===0){ alert("No logs to export."); return; }
+      var hdr = ["Name","Participant","Vehicle","Date Out","Time Out","Date In","Time In"],
+          rows = [hdr.join(',')];
+      for(var i=0;i<logData.length;i++){
+        var e = logData[i], line = [];
+        for(var j=0;j<hdr.length;j++){
+          line.push('"' + (e[hdr[j]]||"") + '"');
+        }
+        rows.push(line.join(','));
       }
-      const headers = ["Name", "Participant", "Vehicle", "Date Out", "Time Out", "Date In", "Time In"];
-      const csvRows = [];
-      csvRows.push(headers.join(','));
-      logData.forEach(entry => {
-        const row = headers.map(h => `"${entry[h] || ''}"`);
-        csvRows.push(row.join(','));
-      });
-      const csvString = csvRows.join('\n');
-      const blob = new Blob([csvString], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      var csv = rows.join('\n'),
+          blob = new Blob([csv],{type:'text/csv'}),
+          url = window.URL.createObjectURL(blob),
+          a = document.createElement('a');
       a.href = url;
-      a.download = `vehicle_key_log_${new Date().toISOString().slice(0,16).replace(/[:-]/g,'')}.csv`;
+      a.download = 'vehicle_key_log_' + (new Date()).toISOString().slice(0,16).replace(/[:-]/g,'') + '.csv';
       a.click();
       window.URL.revokeObjectURL(url);
       alert("Log exported as CSV file.");
     }
-    function emailLog() {
+    function emailLog(){
       alert("Simulated email sent to hub@burnett.net.au.");
     }
 
-    // ------------------ Exit Timer for Logs Button ------------------
-    function startExitTimer() {
-      exitTimer = setTimeout(exitApp, 4000);
-    }
-    function cancelExitTimer() {
-      if (exitTimer) {
-        clearTimeout(exitTimer);
-        exitTimer = null;
-      }
-    }
-    function exitApp() {
-      alert("Exiting application...");
-      location.reload();
-    }
+    // exit on long‑press
+    function startExitTimer(){ exitTimer = setTimeout(exitApp,4000); }
+    function cancelExitTimer(){ clearTimeout(exitTimer); }
+    function exitApp(){ alert("Exiting..."); location.reload(); }
 
-    // ------------------ Event Listeners ------------------
-    // Welcome screen button
+    // events
     document.getElementById('continueBtn').addEventListener('click', setupMainInterface);
-
-    // Sign Out and Sign In buttons
     document.getElementById('btnSignOut').addEventListener('click', signOut);
     document.getElementById('btnSignIn').addEventListener('click', signIn);
 
-    // Logs button: add both mouse and touch event listeners for optimal touchscreen compatibility.
-    const btnLogs = document.getElementById('btnLogs');
+    var btnLogs = document.getElementById('btnLogs');
     btnLogs.addEventListener('mousedown', startExitTimer);
-    btnLogs.addEventListener('mouseup', () => {
-      cancelExitTimer();
-      showLogViewer();
-    });
+    btnLogs.addEventListener('mouseup', function(){ cancelExitTimer(); showLogViewer(); });
     btnLogs.addEventListener('touchstart', startExitTimer);
-    btnLogs.addEventListener('touchend', () => {
-      cancelExitTimer();
-      showLogViewer();
-    });
+    btnLogs.addEventListener('touchend', function(){ cancelExitTimer(); showLogViewer(); });
 
-    // Log viewer controls
     document.getElementById('btnBack').addEventListener('click', setupMainInterface);
     document.getElementById('btnExportLog').addEventListener('click', exportLogPrompt);
 
-    // Start on the welcome screen.
+    // initialize
     setupWelcomeScreen();
   </script>
 </body>
