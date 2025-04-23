@@ -148,20 +148,27 @@
         <!-- Sign Out -->
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
-            <div class="form-group" style="display:flex; gap:10px;">
-              <div style="flex:1;">
-                <label for="outName">Name</label>
-                <input type="text" id="outName" placeholder="Name">
-              </div>
-              <div style="flex:1;">
-                <label for="outParticipant">Destination</label>
-                <input type="text" id="outParticipant" placeholder="Destination">
-            </div>
-        </div>
+            <!-- Name and Participant side-by-side -->
+<div class="form-group" style="display: flex; gap: 10px;">
+  <div style="flex: 1;">
+    <label for="outName">Name</label>
+    <input type="text" id="outName" placeholder="Name">
+  </div>
+  <div style="flex: 1;">
+    <label for="outParticipant">Participant</label>
+    <input type="text" id="outParticipant" placeholder="Participant">
+  </div>
+</div>
+
+<!-- Full-width Destination below -->
+<div class="form-group">
+  <label for="outDestination">Destination</label>
+  <input type="text" id="outDestination" placeholder="Destination">
+</div>
 
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
-            <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; max-width:100%; max-height:100px; margin-bottom:10px;">
+            <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; max-width:100%; max-height:150px; margin-bottom:10px;">
             <select id="outVehicle">
               <option value="">-- Select Vehicle --</option>
               <option>HiAce Bus - 656 GG4</option>
@@ -198,10 +205,10 @@
       <table id="logTable">
         <thead>
           <tr>
-            <th>Name</th><th>Participant</th><th>Vehicle</th>
+            <th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th>
             <th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th>
           </tr>
-        </thead>
+      </thead>
         <tbody></tbody>
       </table>
       <button class="btn btn-export" id="btnResetLog">Reset Log</button>
@@ -279,16 +286,29 @@
 
     // Sign Out
     function signOut(){
-      var name = document.getElementById('outName').value.trim(),
-          part = document.getElementById('outParticipant').value.trim(),
-          vehicle = document.getElementById('outVehicle').value;
-      if (!name || !part || !vehicle) { alert("Please fill out all fields."); return; }
+     var name = document.getElementById('outName').value.trim(),
+      part = document.getElementById('outParticipant').value.trim(),
+      dest = document.getElementById('outDestination').value.trim(),
+      vehicle = document.getElementById('outVehicle').value;
+
+      if (!name || !part || !dest || !vehicle) {
+      alert("Please fill out all fields."); return;
+      }
+
       if (vehicles[vehicle].length >= 2) { alert("All keys for " + vehicle + " are signed out."); return; }
       var now = new Date(), dOut = formatDate(now), tOut = formatTime(now);
       vehicles[vehicle].push(name);
       keysOut[name] = { Participant: part, Vehicle: vehicle, DateOut: dOut, TimeOut: tOut };
-      logData.push({ Name: name, Participant: part, Vehicle: vehicle,
-                     "Date Out": dOut, "Time Out": tOut, "Date In": "", "Time In": "" });
+      logData.push({
+      Name: name,
+      Participant: part,
+      Destination: dest,
+      Vehicle: vehicle,
+      "Date Out": dOut,
+      "Time Out": tOut,
+      "Date In": "",
+      "Time In": ""
+    });
       alert(name + " signed out a key for " + vehicle + ".");
       saveToLocal();
       document.getElementById('vehiclePreview').style.display = 'none';
@@ -331,7 +351,7 @@
     function renderLogTable(){
       var tbody = document.querySelector('#logTable tbody');
       tbody.innerHTML = '';
-      var cols = ["Name","Participant","Vehicle","Date Out","Time Out","Date In","Time In"];
+     var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
       for (var i=0; i<logData.length; i++){
         var row = document.createElement('tr'),
             entry = logData[i];
