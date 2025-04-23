@@ -148,14 +148,17 @@
         <!-- Sign Out -->
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
-          <div class="form-group">
-            <label for="outName">Name</label>
-            <input type="text" id="outName" placeholder="Name">
-          </div>
-          <div class="form-group">
-            <label for="outParticipant">Participant</label>
-            <input type="text" id="outParticipant" placeholder="Participant">
-          </div>
+            <div class="form-group" style="display:flex; gap:10px;">
+              <div style="flex:1;">
+                <label for="outName">Name</label>
+                <input type="text" id="outName" placeholder="Name">
+              </div>
+              <div style="flex:1;">
+                <label for="outParticipant">Destination</label>
+                <input type="text" id="outParticipant" placeholder="Destination">
+            </div>
+        </div>
+
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
             <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; max-width:100%; max-height:100px; margin-bottom:10px;">
@@ -204,14 +207,7 @@
       <button class="btn btn-export" id="btnResetLog">Reset Log</button>
       <button class="btn btn-back"    id="btnBack">Back</button>
     </div>
-  </div>
-
-  <!-- Success Popup -->
-  <div id="successModal">
-    <div class="modal-content">
-      <h3 id="successMessage"></h3>
-    </div>
-  </div>
+  </div>  
 
   <!-- ES5 JavaScript -->
   <script>
@@ -250,7 +246,7 @@
       catch(e) { console.warn("Failed to save logData", e); }
     }
 
-    var autoResetTimer, exitTimer;
+    
     function pad2(n){ return n<10? "0"+n : n; }
     function formatDate(d){
       return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear();
@@ -258,23 +254,13 @@
     function formatTime(d){
       return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
     }
-    function showSuccessPopup(msg, secs){
-      secs = secs || 3;
-      var modal = document.getElementById('successModal');
-      document.getElementById('successMessage').innerText = msg;
-      modal.style.display = 'flex';
-      setTimeout(function(){ modal.style.display = 'none'; }, secs*1000);
-    }
-
-    // Screens
-    function setupWelcomeScreen(){
-      clearTimeout(autoResetTimer);
+        // Screens
+    function setupWelcomeScreen(){    
       document.getElementById('welcomeScreen').style.display = 'block';
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
     }
-    function setupMainInterface(){
-      clearTimeout(autoResetTimer);
+    function setupMainInterface(){   
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
       document.getElementById('logViewer').style.display = 'none';
@@ -283,11 +269,9 @@
       document.getElementById('outVehicle').value = "";
       updateReturnNames();
       document.getElementById('inName').value = "";
-      document.getElementById('returnDate').value = formatDate(new Date());
-      autoResetTimer = setTimeout(setupWelcomeScreen, 100000);
+      document.getElementById('returnDate').value = formatDate(new Date());      
     }
-    function showLogViewer(){
-      clearTimeout(autoResetTimer);
+    function showLogViewer(){      
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'block';
       renderLogTable();
@@ -305,8 +289,9 @@
       keysOut[name] = { Participant: part, Vehicle: vehicle, DateOut: dOut, TimeOut: tOut };
       logData.push({ Name: name, Participant: part, Vehicle: vehicle,
                      "Date Out": dOut, "Time Out": tOut, "Date In": "", "Time In": "" });
-      showSuccessPopup(name + " signed out a key for " + vehicle + ".");
+      alert(name + " signed out a key for " + vehicle + ".");
       saveToLocal();
+      document.getElementById('vehiclePreview').style.display = 'none';
       setupMainInterface();
     }
 
@@ -326,7 +311,7 @@
           e["Date In"] = ret; e["Time In"] = tIn; break;
         }
       }
-      showSuccessPopup(name + " returned a key for " + rec.Vehicle + ".");
+      alert(name + " returned a key for " + rec.Vehicle + ".");
       saveToLocal();
       setupMainInterface();
     }
@@ -419,6 +404,13 @@ document.getElementById('outVehicle').addEventListener('change', function(){
     img.style.display = 'none';
   }
 });
+
+    document.addEventListener('visibilitychange', function(){
+  if (document.hidden) {
+    setupWelcomeScreen();
+  }
+});
+
     // Initialize
     setupWelcomeScreen();
   </script>
