@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Key Register">
-  <link rel="apple-touch-icon" href="hub_logo.png"> <!-- optional icon -->
+  <link rel="apple-touch-icon" href="hub_web_logo.png"> <!-- optional icon -->
   <title>Vehicle Keys Sign In / Sign Out Register</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -371,11 +371,10 @@
     
     // Logs button: touch only
     var btnLogs = document.getElementById('btnLogs');
-    btnLogs.addEventListener('touchstart', function(e){
-      e.preventDefault(); exitTimer = setTimeout(function(){
-        alert("Exiting..."); location.reload();
-      }, 4000);
-    }, {passive:false});
+    btnLogs.addEventListener('touchend', function(e){
+  e.preventDefault(); 
+  showLogViewer();
+}, {passive:false});
     btnLogs.addEventListener('touchend', function(e){
       e.preventDefault(); clearTimeout(exitTimer); showLogViewer();
     }, {passive:false});
