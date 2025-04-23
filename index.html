@@ -163,6 +163,15 @@
     <input type="text" id="outParticipant" placeholder="Participant">
   </div>
 </div>
+<div class="form-group">
+  <label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label>
+</div>
+<div class="form-group" id="manualOutFields" style="display:none; gap:10px; flex-wrap:wrap; display:flex;">
+  <div><label>Date Out</label><input type="text" id="outDateManual"></div>
+  <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
+</div>
+
+  
 
 <!-- Full-width Destination below -->
 <div class="form-group">
@@ -192,13 +201,20 @@
               <option value="">-- Select Name --</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="returnDate">Return Date (DD-MM-YYYY)</label>
-            <input type="text" id="returnDate">
-          </div>
           <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
           <br>
           <button class="btn btn-logs" id="btnLogs">Logs</button>
+
+          <div class="form-group" style="display:flex; gap:10px;">
+  <div style="flex:1;">
+    <label for="returnDate">Return Date (DD-MM-YYYY)</label>
+    <input type="text" id="returnDate">
+  </div>
+  <div style="flex:1;">
+    <label for="returnTime">Return Time (HH:MM)</label>
+    <input type="text" id="returnTime">
+  </div>
+</div>
         </div>
       </div>
     </div>
@@ -278,9 +294,10 @@
       document.getElementById('outName').value = "";
       document.getElementById('outParticipant').value = "";
       document.getElementById('outVehicle').value = "";
+      document.getElementById('returnDate').value = formatDate(new Date());
+      document.getElementById('returnTime').value = formatTime(new Date());
       updateReturnNames();
-      document.getElementById('inName').value = "";
-      document.getElementById('returnDate').value = formatDate(new Date());      
+       
     }
     function showLogViewer(){      
       document.getElementById('mainInterface').style.display = 'none';
@@ -294,6 +311,12 @@
       part = document.getElementById('outParticipant').value.trim(),
       dest = document.getElementById('outDestination').value.trim(),
       vehicle = document.getElementById('outVehicle').value;
+
+      let dOut = formatDate(now), tOut = formatTime(now);
+        if (toggle.checked) {
+          dOut = document.getElementById('outDateManual').value.trim();
+          tOut = document.getElementById('outTimeManual').value.trim();
+      }
 
       if (!name || !part || !dest || !vehicle) {
       alert("Please fill out all fields."); return;
@@ -334,6 +357,12 @@
         if (e.Name===name && e.Vehicle===rec.Vehicle && e["Date In"]===""){
           e["Date In"] = ret; e["Time In"] = tIn; break;
         }
+        const retDate = document.getElementById('returnDate').value.trim();
+        const retTime = document.getElementById('returnTime').value.trim();
+// …
+        e["Date In"] = retDate;
+        e["Time In"] = retTime;
+
       }
       alert(name + " returned a key for " + rec.Vehicle + ".");
       saveToLocal();
@@ -361,10 +390,19 @@
             entry = logData[i];
         for (var j=0; j<cols.length; j++){
           var td = document.createElement('td');
-          td.textContent = entry[cols[j]];
+          td.contentEditable = true;
+          td.classList.add('editable-cell');
           row.appendChild(td);
         }
         tbody.appendChild(row);
+        tbody.querySelectorAll('.editable-cell').forEach(cell => {
+          cell.addEventListener('blur', e => {
+            const rowIdx = cell.parentElement.rowIndex - 1;       // adjust for header
+            const colKey = cols[cell.cellIndex];
+            logData[rowIdx][colKey] = cell.textContent.trim();
+            saveToLocal();
+          });
+        });
       }
     }
 
@@ -436,6 +474,18 @@ document.getElementById('outDestination').addEventListener('keydown', function(e
   if (e.key === 'Enter' || e.keyCode === 13) {
     e.preventDefault();
     this.blur(); // Remove focus to hide the keyboard
+  }
+});
+
+    const toggle = document.getElementById('manualOutToggle');
+const manualFields = document.getElementById('manualOutFields');
+toggle.addEventListener('change', () => {
+  if (toggle.checked) {
+    manualFields.style.display = 'flex';
+    outDateManual.value = formatDate(new Date());
+    outTimeManual.value = formatTime(new Date());
+  } else {
+    manualFields.style.display = 'none';
   }
 });
 
