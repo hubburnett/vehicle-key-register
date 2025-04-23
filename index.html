@@ -369,15 +369,12 @@
     }
 
     
-    // Logs button: touch only
+    // Logs button: 
     var btnLogs = document.getElementById('btnLogs');
     btnLogs.addEventListener('touchend', function(e){
   e.preventDefault(); 
   showLogViewer();
 }, {passive:false});
-    btnLogs.addEventListener('touchend', function(e){
-      e.preventDefault(); clearTimeout(exitTimer); showLogViewer();
-    }, {passive:false});
 
     // Other events
     document.getElementById('continueBtn').addEventListener('touchend', function(e){
