@@ -26,7 +26,6 @@
       padding: 0 20px;
     }
 
-
     /* Welcome Screen */
     #welcomeScreen { text-align: center; padding: 40px; }
     #welcomeScreen img { max-width: 200px; margin-bottom: 20px; }
@@ -257,7 +256,6 @@
       catch(e) { console.warn("Failed to save logData", e); }
     }
 
-    
     function pad2(n){ return n<10? "0"+n : n; }
     function formatDate(d){
       return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear();
@@ -265,7 +263,8 @@
     function formatTime(d){
       return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
     }
-        // Screens
+
+    // Screens
     function setupWelcomeScreen(){    
       document.getElementById('welcomeScreen').style.display = 'block';
       document.getElementById('mainInterface').style.display = 'none';
@@ -277,6 +276,7 @@
       document.getElementById('logViewer').style.display = 'none';
       document.getElementById('outName').value = "";
       document.getElementById('outParticipant').value = "";
+      document.getElementById('outDestination').value = ""; // cleared after sign-out
       document.getElementById('outVehicle').value = "";
       updateReturnNames();
       document.getElementById('inName').value = "";
@@ -315,7 +315,7 @@
     });
       alert(name + " signed out a key for " + vehicle + ".");
       saveToLocal();
-      document.getElementById('vehiclePreview').style.display = 'none';
+      document.getElementById('vehiclePreview`).style.display = 'none';
       setupMainInterface();
     }
 
@@ -350,7 +350,6 @@
         sel.appendChild(o);
       }
     }
-
     // Table
     function renderLogTable(){
       var tbody = document.querySelector('#logTable tbody');
@@ -367,7 +366,6 @@
         tbody.appendChild(row);
       }
     }
-
     
     // Logs button: 
     var btnLogs = document.getElementById('btnLogs');
