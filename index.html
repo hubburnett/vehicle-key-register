@@ -8,7 +8,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      transform: scale(0.90);
+      transform: scale(0.80);
       transform-origin: top center;
       font-family: Arial, sans-serif;
       background-color: #fdf1e9;
@@ -428,6 +428,14 @@ document.getElementById('outVehicle').addEventListener('change', function(){
     document.addEventListener('visibilitychange', function(){
   if (document.hidden) {
     setupWelcomeScreen();
+  }
+});
+
+    // Hide keyboard on Return key (Destination field)
+document.getElementById('outDestination').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.keyCode === 13) {
+    e.preventDefault();
+    this.blur(); // Remove focus to hide the keyboard
   }
 });
 
