@@ -14,7 +14,12 @@
       padding: 20px;
       -webkit-tap-highlight-color: transparent;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
 
     /* Welcome Screen */
     #welcomeScreen { text-align: center; padding: 40px; }
@@ -29,16 +34,26 @@
     /* Main Interface */
     #mainInterface { display: none; }
     .panels {
-      display: flex; gap: 1rem;
-      flex-wrap: wrap; justify-content: center;
-      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 1rem;
     }
+
     .panel {
-      background: #fff; border: 1px solid #ccc;
-      border-radius: 6px; padding: 20px;
-      width: 288px; /* 10% smaller */
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      flex-grow: 1;
+      max-width: 500px;
+      min-width: 0;
     }
+
+    #signOutPanel { flex-basis: 58%; }
+    #signInPanel  { flex-basis: 42%; }
+    
     .panel h3 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
     .form-group { margin-bottom: 15px; }
     label {
