@@ -177,10 +177,27 @@
   </div> <!-- /.container -->
   <script>
 
-    /**
-     * Accepts many common date formats:
-     *  DD/MM/YYYY, D/M/YY, DD-M-YYYY, etc.
-     */
+      function normalizeDate(s) {
+      var re = /^(\d{1,2})([\/\-])(\d{1,2})\2(\d{2}|\d{4})$/;
+      var m  = s.match(re);
+      if (!m) return s;
+      var day   = ('0' + parseInt(m[1],10)).slice(-2);
+      var month = ('0' + parseInt(m[3],10)).slice(-2);
+      var year  = m[4].length === 2 ? '20' + m[4] : m[4];
+      return day + '-' + month + '-' + year;
+    }
+    
+    function normalizeTime(s) {
+      // same regex as isValidAmPm
+      var re = /^\s*(1[0-2]|[1-9])[:\-\.]?([0-5]\d)\s*(AM|PM)\s*$/i;
+      var m = s.match(re);
+      if (!m) return s;
+      var h    = parseInt(m[1], 10);
+      var mm   = ('0' + parseInt(m[2], 10)).slice(-2);
+      var ampm = m[3].toUpperCase();
+      return pad2(h) + ':' + mm + ' ' + ampm;
+    }
+    
     function isValidDate(s) {
       // Matches 1-2 digits, slash or dash, 1-2 digits, same sep, 2-4 digits
       var re = /^(\d{1,2})([\/\-])(\d{1,2})\2(\d{2}|\d{4})$/;
@@ -364,23 +381,26 @@
       var tOut = formatTime(now);
     
       // ——— If manual entry, validate date and time ———
-      if (toggle.checked) {
-        var manualDate = outDateManual.value.trim();
-        var manualTime = outTimeManual.value.trim();
+    if (toggle.checked) {
+      // 1) grab raw
+      var rawDate = outDateManual.value.trim();
+      var rawTime = outTimeManual.value.trim();
     
-        if (!isValidDate(manualDate)) {
-          alert("Please enter a valid date (e.g. DD/MM/YYYY, D-M-YY).");
-          return;
-        }
-        if (!isValidAmPm(manualTime)) {
-          alert("Please enter time in HH:MM AM/PM format (e.g. 1:18 PM).");
-          return;
-        }
-    
-        dOut = manualDate;
-        tOut = manualTime;
+      // 2) validate
+      if (!isValidDate(rawDate)) {
+        alert("Please enter a valid date (e.g. DD/MM/YYYY).");
+        return;
+      }
+      if (!isValidAmPm(rawTime)) {
+        alert("Please enter time in HH:MM AM/PM format (e.g. 1:18 PM).");
+        return;
       }
     
+      // 3) normalize & assign
+      dOut = normalizeDate(rawDate);
+      tOut = normalizeTime(rawTime);
+    }
+
       // ——— Record sign-out ———
       vehicles[vehicle].push(name);
       keysOut[name] = {
@@ -430,13 +450,18 @@
         alert("Please enter a valid return date (e.g. DD/MM/YYYY or D-M-YY).");
         return;
       }
-    
+      
+      retDate = normalizeDate(retDate);
+      
+      
       // ③ Validate time format
       if (!isValidAmPm(retTime)) {
         alert("Please enter a valid return time (e.g. 1:18 PM, 2-05PM or 3.30 AM).");
         return;
       }
-    
+      
+      retTime = normalizeTime(retTime);
+      
       // ④ Confirm this user actually has a key out
       if (!keysOut[name]) {
         alert("This name does not have a key signed out.");
