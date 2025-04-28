@@ -265,21 +265,20 @@
         }
         tbody.appendChild(row);
         // find all editable cells
-var cells = tbody.querySelectorAll('.editable-cell');
-// loop in ES5 style
-for (var i = 0; i < cells.length; i++) {
-  (function(cell) {
-    cell.addEventListener('blur', function(e) {
-      // …save logic (exactly what you had before)… 
-      var rowIdx = cell.parentElement.rowIndex - 1;
-      var colKey = cols[cell.cellIndex];
-      logData[rowIdx][colKey] = cell.textContent.trim();
-      saveToLocal();
-    });
-  })(cells[i]);
+  var cells = tbody.querySelectorAll('.editable-cell');
+  // loop in ES5 style
+  for (var i = 0; i < cells.length; i++) {
+    (function(cell) {
+      cell.addEventListener('blur', function(e) {
+        // …save logic (exactly what you had before)… 
+        var rowIdx = cell.parentElement.rowIndex - 1;
+        var colKey = cols[cell.cellIndex];
+         logData[rowIdx][colKey] = cell.textContent.trim();
+        saveToLocal();
+      });
+    })(cells[i]);
+  }
 }
-
-
     
     // Logs button: 
     var btnLogs = document.getElementById('btnLogs');
