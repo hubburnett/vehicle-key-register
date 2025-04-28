@@ -306,41 +306,61 @@
     }
 
     // Sign Out
-    function signOut(){
-     var name = document.getElementById('outName').value.trim(),
-      part = document.getElementById('outParticipant').value.trim(),
-      dest = document.getElementById('outDestination').value.trim(),
-      vehicle = document.getElementById('outVehicle').value;
+function signOut(){
+  // 1) grab form values
+  const name    = document.getElementById('outName').value.trim();
+  const part    = document.getElementById('outParticipant').value.trim();
+  const dest    = document.getElementById('outDestination').value.trim();
+  const vehicle = document.getElementById('outVehicle').value;
 
-      let dOut = formatDate(now), tOut = formatTime(now);
-        if (toggle.checked) {
-          dOut = document.getElementById('outDateManual').value.trim();
-          tOut = document.getElementById('outTimeManual').value.trim();
-      }
+  // 2) basic validation
+  if (!name || !part || !dest || !vehicle) {
+    alert("Please fill out all fields.");
+    return;
+  }
+  if (vehicles[vehicle].length >= 2) {
+    alert("All keys for " + vehicle + " are signed out.");
+    return;
+  }
 
-      if (!name || !part || !dest || !vehicle) {
-      alert("Please fill out all fields."); return;
-      }
+  // 3) timestamp—only once
+  const now  = new Date();
+  let dOut   = formatDate(now);
+  let tOut   = formatTime(now);
 
-      if (vehicles[vehicle].length >= 2) { alert("All keys for " + vehicle + " are signed out."); return; }
-      var now = new Date(), dOut = formatDate(now), tOut = formatTime(now);
-      vehicles[vehicle].push(name);
-      keysOut[name] = { Participant: part, Vehicle: vehicle, DateOut: dOut, TimeOut: tOut };
-      logData.push({
-      Name: name,
-      Participant: part,
-      Destination: dest,
-      Vehicle: vehicle,
-      "Date Out": dOut,
-      "Time Out": tOut,
-      "Date In": "",
-      "Time In": ""
-    });
-      alert(name + " signed out a key for " + vehicle + ".");
-      saveToLocal();
-      document.getElementById('vehiclePreview').style.display = 'none';
-      setupMainInterface();
-    }
+  // 4) manual override, if toggled on
+  if (toggle.checked) {
+    dOut = outDateManual.value.trim();
+    tOut = outTimeManual.value.trim();
+  }
+
+  // 5) update in-memory state
+  vehicles[vehicle].push(name);
+  keysOut[name] = {
+    Participant: part,
+    Vehicle:     vehicle,
+    DateOut:     dOut,
+    TimeOut:     tOut
+  };
+
+  // 6) push into the log array
+  logData.push({
+    Name:         name,
+    Participant:  part,
+    Destination:  dest,
+    Vehicle:      vehicle,
+    "Date Out":   dOut,
+    "Time Out":   tOut,
+    "Date In":    "",
+    "Time In":    ""
+  });
+
+  // 7) persist and reset UI
+  alert(`${name} signed out a key for ${vehicle}.`);
+  saveToLocal();
+  document.getElementById('vehiclePreview').style.display = 'none';
+  setupMainInterface();
+}
 
     // Sign In
     function signIn(){
@@ -390,6 +410,7 @@
             entry = logData[i];
         for (var j=0; j<cols.length; j++){
           var td = document.createElement('td');
+          td.textContent = entry[ cols[j] ];
           td.contentEditable = true;
           td.classList.add('editable-cell');
           row.appendChild(td);
@@ -478,7 +499,10 @@ document.getElementById('outDestination').addEventListener('keydown', function(e
 });
 
     const toggle = document.getElementById('manualOutToggle');
-const manualFields = document.getElementById('manualOutFields');
+    const manualFields = document.getElementById('manualOutFields');
+    const outDateManual = document.getElementById('outDateManual');
+    const outTimeManual = document.getElementById('outTimeManual');
+
 toggle.addEventListener('change', () => {
   if (toggle.checked) {
     manualFields.style.display = 'flex';
