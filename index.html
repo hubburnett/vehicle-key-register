@@ -221,10 +221,25 @@
     function formatDate(d) {
       return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear();
     }
-    function formatTime(d) {
-      return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+   function formatTime(d) {
+    var h = d.getHours();
+    var m = d.getMinutes();
+    var ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    h = h ? h : 12; // the hour “0” should be “12”
+    return pad2(h) + ":" + pad2(m) + " " + ampm;
+    }
+
+  function isValidAmPm(t) {
+    return /^[0-1]?\d:[0-5]\d\s?(AM|PM)$/i.test(t);
     }
   
+    // In signOut / signIn when manual checked:
+    if (toggle.checked && !isValidAmPm(tOut)) {
+      alert("Please enter time in HH:MM AM/PM format. For exmaple; 1:18 PM");
+      return;
+    }
+    
     // UI setup functions
     function setupWelcomeScreen() {
       document.getElementById('welcomeScreen').style.display = 'block';
