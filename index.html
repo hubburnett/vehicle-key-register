@@ -174,10 +174,60 @@
       <button class="btn btn-export" id="btnResetLog">Reset Log</button>
       <button class="btn btn-back" id="btnBack">Back</button>
     </div>
-
   </div> <!-- /.container -->
-
   <script>
+
+    /**
+     * Accepts many common date formats:
+     *  DD/MM/YYYY, D/M/YY, DD-M-YYYY, etc.
+     */
+    function isValidDate(s) {
+      // Matches 1-2 digits, slash or dash, 1-2 digits, same sep, 2-4 digits
+      var re = /^(\d{1,2})([\/\-])(\d{1,2})\2(\d{2}|\d{4})$/;
+      var m = s.match(re);
+      if (!m) return false;
+    
+      var day   = parseInt(m[1], 10),
+          month = parseInt(m[3], 10),
+          year  = parseInt(m[4], 10);
+      // normalize 2-digit year to 2000+ e.g. "21"→2021
+      if (m[4].length === 2) year += 2000;
+    
+      // basic range checks
+      if (month < 1 || month > 12) return false;
+      var mdays = [
+        31,
+        ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 29 : 28,
+        31,30,31,30,31,31,30,31,30,31
+      ];
+      return day >= 1 && day <= mdays[month - 1];
+    }
+    
+    
+    /**
+     * Accepts flexible 12-hour times, e.g.:
+     *   1:19PM   1-19PM   1.19 PM   12:05 am
+     */
+    function isValidAmPm(s) {
+      // ^\s*                   optional leading spaces
+      // (1[0-2]|[1-9])         hour: 1–9 or 10–12
+      // [:\-\.]?               optional separator (: or - or .)
+      // ([0-5]\d)              minutes: 00–59
+      // \s*                    optional space
+      // (AM|PM)                AM or PM
+      // \s*$                   optional trailing spaces
+      var re = /^\s*(1[0-2]|[1-9])[:\-\.]?([0-5]\d)\s*(AM|PM)\s*$/i;
+      return re.test(s);
+    }
+    
+    
+    /**
+     * Accepts either a valid date or a valid 12-hour time.
+     */
+    function isValidDateOrTime(s) {
+      return isValidDate(s) || isValidAmPm(s);
+    }
+    
     // Global error handler
     window.onerror = function(msg, url, line) {
       alert("JS error: " + msg + "\n(line " + line + ")");
@@ -294,7 +344,6 @@
       if (!vehicle) missing.push('outVehicle');
     
       if (missing.length) {
-        // highlight missing labels
         missing.forEach(function(id){
           var lbl = document.querySelector('label[for="'+id+'"]');
           if (lbl) lbl.classList.add('error');
@@ -309,20 +358,27 @@
         return;
       }
     
-      // ——— Prepare times ———
-      var now = new Date();
+      // ——— Prepare default timestamps ———
+      var now  = new Date();
       var dOut = formatDate(now);
       var tOut = formatTime(now);
     
-      // ——— If manual entry, validate AM/PM format ———
+      // ——— If manual entry, validate date and time ———
       if (toggle.checked) {
-        dOut = outDateManual.value.trim();
-        tOut = outTimeManual.value.trim();
+        var manualDate = outDateManual.value.trim();
+        var manualTime = outTimeManual.value.trim();
     
-        if (!isValidAmPm(tOut)) {
+        if (!isValidDate(manualDate)) {
+          alert("Please enter a valid date (e.g. DD/MM/YYYY, D-M-YY).");
+          return;
+        }
+        if (!isValidAmPm(manualTime)) {
           alert("Please enter time in HH:MM AM/PM format (e.g. 1:18 PM).");
           return;
         }
+    
+        dOut = manualDate;
+        tOut = manualTime;
       }
     
       // ——— Record sign-out ———
@@ -355,31 +411,45 @@
       document.getElementById('vehiclePreview').style.display = 'none';
       setupMainInterface();
     }
-
   
     // Sign-in logic
     function signIn() {
-      var sel = document.getElementById('inName');
-      var name = sel.value;
+      var sel     = document.getElementById('inName');
+      var name    = sel.value;
       var retDate = document.getElementById('returnDate').value.trim();
       var retTime = document.getElementById('returnTime').value.trim();
-        
-      if (toggle.checked && !isValidAmPm(tOut)) {
-        alert("Please enter time in HH:MM AM/PM format. For exmaple; 1:18 PM");
+    
+      // ① All fields required
+      if (!name || !retDate || !retTime) {
+        alert("Please select a name and enter both return date and time.");
         return;
       }
-      if (!name) {
-        alert("Please select a name.");
+    
+      // ② Validate date format
+      if (!isValidDate(retDate)) {
+        alert("Please enter a valid return date (e.g. DD/MM/YYYY or D-M-YY).");
         return;
       }
+    
+      // ③ Validate time format
+      if (!isValidAmPm(retTime)) {
+        alert("Please enter a valid return time (e.g. 1:18 PM, 2-05PM or 3.30 AM).");
+        return;
+      }
+    
+      // ④ Confirm this user actually has a key out
       if (!keysOut[name]) {
         alert("This name does not have a key signed out.");
         return;
       }
+    
+      // ⑤ Perform the sign-in
       var rec = keysOut[name];
       delete keysOut[name];
+    
       var idx = vehicles[rec.Vehicle].indexOf(name);
       if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
+    
       for (var i = 0; i < logData.length; i++) {
         var e = logData[i];
         if (e.Name === name && e.Vehicle === rec.Vehicle && !e["Date In"]) {
@@ -388,10 +458,12 @@
           break;
         }
       }
+    
       alert(name + " returned a key for " + rec.Vehicle + ".");
       saveToLocal();
       setupMainInterface();
     }
+
   
     // Populate the Sign-In dropdown
     function updateReturnNames() {
