@@ -91,7 +91,7 @@
       margin-left: 10px;
     }
     .panel-description {
-      margin: 50 0 12px;
+      margin: 12 0 0px;
       font-size: 1.2rem;
       color: #555;
       line-height: 1.4;
@@ -112,7 +112,7 @@
 
         <!-- Sign Out Panel -->
         <div class="panel" id="signOutPanel">
-          <h><h3>Sign Out</h3>
+          <h3>Sign Out</h3>
           <div class="form-group inline-flex">
             <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName" placeholder="Name"></div>
             <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" placeholder="Participant"></div>
@@ -143,16 +143,18 @@
           <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
           <button class="btn btn-logs" id="btnLogs">Logs</button>
 
-          <p class="panel-description">
-          This digital key register automatically timestamps every sign-out and sign-in,
-          fills in vehicle info, and stores your log locally—no paper needed.
-          To use: Tap “Sign Out” or “Sign In” and the date/time will auto-fill.
-          If you need to adjust a timestamp, check “Enter Date/Time Manually.”
-          </p>
-
+          
           <div class="form-group inline-flex" style="flex-wrap:wrap;">
             <div style="flex:1;"><label for="returnDate">Return Date</label><input type="text" id="returnDate"></div>
             <div style="flex:1;"><label for="returnTime">Return Time</label><input type="text" id="returnTime"></div>
+
+            <p class="panel-description">
+            This digital key register automatically timestamps every sign-out and sign-in,
+            fills in vehicle info, and stores your log locally—no paper needed.
+            To use: Tap “Sign Out” or “Sign In” and the date/time will auto-fill.
+            If you need to adjust a timestamp, check “Enter Date/Time Manually.”
+            </p>
+            
           </div>
         </div> <!-- /#signInPanel -->
       </div> <!-- /.panels -->
