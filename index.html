@@ -91,7 +91,7 @@
       margin-left: 10px;
     }
     .panel-description {
-      margin: 12 0 0px;
+      margin: 12px 0 0px;
       font-size: 1.2rem;
       color: #555;
       line-height: 1.4;
@@ -233,13 +233,7 @@
   function isValidAmPm(t) {
     return /^[0-1]?\d:[0-5]\d\s?(AM|PM)$/i.test(t);
     }
-  
-    // In signOut / signIn when manual checked:
-    if (toggle.checked && !isValidAmPm(tOut)) {
-      alert("Please enter time in HH:MM AM/PM format. For exmaple; 1:18 PM");
-      return;
-    }
-    
+         
     // UI setup functions
     function setupWelcomeScreen() {
       document.getElementById('welcomeScreen').style.display = 'block';
@@ -282,6 +276,12 @@
         alert("All keys for " + vehicle + " are signed out.");
         return;
       }
+       
+      if (toggle.checked && !isValidAmPm(tOut)) {
+        alert("Please enter time in HH:MM AM/PM format. For exmaple; 1:18 PM");
+        return;
+      }
+      
       var now = new Date();
       var dOut = formatDate(now);
       var tOut = formatTime(now);
@@ -318,6 +318,11 @@
       var name = sel.value;
       var retDate = document.getElementById('returnDate').value.trim();
       var retTime = document.getElementById('returnTime').value.trim();
+        
+      if (toggle.checked && !isValidAmPm(tOut)) {
+        alert("Please enter time in HH:MM AM/PM format. For exmaple; 1:18 PM");
+        return;
+      }
       if (!name) {
         alert("Please select a name.");
         return;
