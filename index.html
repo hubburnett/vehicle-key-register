@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Key Register">
-  <link rel="apple-touch-icon" href="hub_web_logo.png"> <!-- optional icon -->
+  <link rel="apple-touch-icon" href="hub_web_logo.png">
   <title>Vehicle Keys Sign In / Sign Out Register</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,83 +20,43 @@
       padding: 20px;
       -webkit-tap-highlight-color: transparent;
     }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-
-    /* Welcome Screen */
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
     #welcomeScreen { text-align: center; padding: 40px; }
     #welcomeScreen img { max-width: 200px; margin-bottom: 20px; }
     #welcomeScreen button {
       font-size: 1.5rem; padding: 15px 25px;
       border: none; background-color: #007bff;
-      color: #fff; border-radius: 5px;
-      cursor: pointer;
+      color: #fff; border-radius: 5px; cursor: pointer;
     }
-
-    /* Main Interface */
     #mainInterface { display: none; }
-    .panels {
-      display: flex;
-      flex-wrap: nowrap;
-      justify-content: center;
-    }
-
+    .panels { display: flex; flex-wrap: nowrap; justify-content: center; }
     .panel {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      flex-grow: 1;
-      max-width: 500px;
-      min-width: 0;
+      background: #fff; border: 1px solid #ccc; border-radius: 6px;
+      padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      flex-grow: 1; max-width: 500px; min-width: 0;
     }
-
-    #signOutPanel { 
-      flex-basis: 58%;
-      margin-right: 1rem; /* ← manually create the gap */
-    }
-    
+    #signOutPanel { flex-basis: 58%; margin-right: 1rem; }
     #signInPanel  { flex-basis: 42%; }
-    
     .panel h3 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
     .form-group { margin-bottom: 15px; }
-    label {
-      display: block; margin-bottom: 5px;
-      font-weight: bold; font-size: 1.1rem;
-    }
+    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 1.1rem; }
     input[type="text"], select {
       width: 100%; padding: 12px; font-size: 1rem;
       border: 1px solid #ccc; border-radius: 4px;
     }
-    .btn {
-      display: block; width: 100%; padding: 15px;
-      border: none; border-radius: 4px;
-      font-size: 1.1rem; color: #fff;
+    .btn { display: block; width: 100%; padding: 15px; border: none;
+      border-radius: 4px; font-size: 1.1rem; color: #fff;
       cursor: pointer; margin-top: 10px;
     }
     .btn-sign-out { background-color: #d9534f; }
     .btn-sign-in  { background-color: #5cb85c; }
     .btn-logs {
-      background-color: #6c757d;
-      /* disable iOS callout & selection */
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
+      background-color: #6c757d; -webkit-touch-callout: none;
+      -webkit-user-select: none; touch-action: manipulation;
     }
-
-    /* Log Viewer */
     #logViewer { display: none; }
-    #logViewer h2 {
-      text-align: center; margin-bottom: 20px; font-size: 1.5rem;
-    }
-    #logViewer table {
-      width: 100%; border-collapse: collapse; margin-bottom: 20px;
-    }
+    #logViewer h2 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+    #logViewer table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
     #logViewer th, #logViewer td {
       padding: 10px; border: 1px solid #ccc;
       text-align: left; font-size: 1rem;
@@ -104,13 +64,10 @@
     #logViewer th { background-color: #f4f4f4; }
     #logViewer button {
       padding: 15px 25px; font-size: 1rem;
-      margin-right: 10px; border: none;
-      border-radius: 4px; cursor: pointer;
+      margin-right: 10px; border: none; border-radius: 4px; cursor: pointer;
     }
     .btn-export { background-color: #007bff; color: #fff; }
     .btn-back   { background-color: #6c757d; color: #fff; }
-
-    /* Success Modal */
     #successModal {
       display: none; position: fixed; z-index: 1000;
       left: 0; top: 0; right: 0; bottom: 0;
@@ -128,8 +85,6 @@
   </style>
 </head>
 <body>
-
-  <!-- catch JS errors on old Safari -->
   <script>
     window.onerror = function(msg, url, line) {
       alert("JS error: " + msg + "\n(line " + line + ")");
@@ -138,7 +93,6 @@
   </script>
 
   <div class="container">
-    <!-- Welcome -->
     <div id="welcomeScreen">
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
@@ -146,39 +100,20 @@
       <button id="continueBtn">Tap to Continue</button>
     </div>
 
-    <!-- Main UI -->
     <div id="mainInterface">
       <div class="panels">
-        <!-- Sign Out -->
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
-            <!-- Name and Participant side-by-side -->
-<div class="form-group" style="display: flex; gap: 10px;">
-  <div style="flex: 1;">
-    <label for="outName">Name</label>
-    <input type="text" id="outName" placeholder="Name">
-  </div>
-  <div style="flex: 1;">
-    <label for="outParticipant">Participant</label>
-    <input type="text" id="outParticipant" placeholder="Participant">
-  </div>
-</div>
-<div class="form-group">
-  <label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label>
-</div>
-<div id="manualOutFields" style="display:none; gap:10px; flex-wrap:wrap;">
-  <div><label>Date Out</label><input type="text" id="outDateManual"></div>
-  <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
-</div>
-
-  
-
-<!-- Full-width Destination below -->
-<div class="form-group">
-  <label for="outDestination">Destination</label>
-  <input type="text" id="outDestination" placeholder="Destination">
-</div>
-
+          <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;"><label for="outName">Name</label><input type="text" id="outName" placeholder="Name"></div>
+            <div style="flex: 1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" placeholder="Participant"></div>
+          </div>
+          <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label></div>
+          <div id="manualOutFields" style="display:none; gap:10px; flex-wrap:wrap;">
+            <div><label>Date Out</label><input type="text" id="outDateManual"></div>
+            <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
+          </div>
+          <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination" placeholder="Destination"></div>
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
             <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; max-width:100%; max-height:150px; margin-bottom:10px;">
@@ -192,53 +127,31 @@
           <button class="btn btn-sign-out" id="btnSignOut">Sign Out</button>
         </div>
 
-        <!-- Sign In -->
         <div class="panel" id="signInPanel">
           <h3>Sign In</h3>
-          <div class="form-group">
-            <label for="inName">Select Name</label>
-            <select id="inName">
-              <option value="">-- Select Name --</option>
-            </select>
-          </div>
-          <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
-          <br>
+          <div class="form-group"><label for="inName">Select Name</label><select id="inName"><option value="">-- Select Name --</option></select></div>
+          <button class="btn btn-sign-in" id="btnSignIn">Sign In</button><br>
           <button class="btn btn-logs" id="btnLogs">Logs</button>
-
           <div class="form-group" style="display:flex; gap:10px;">
-  <div style="flex:1;">
-    <label for="returnDate">Return Date (DD-MM-YYYY)</label>
-    <input type="text" id="returnDate">
-  </div>
-  <div style="flex:1;">
-    <label for="returnTime">Return Time (HH:MM)</label>
-    <input type="text" id="returnTime">
-  </div>
-</div>
+            <div style="flex:1;"><label for="returnDate">Return Date (DD-MM-YYYY)</label><input type="text" id="returnDate"></div>
+            <div style="flex:1;"><label for="returnTime">Return Time (HH:MM)</label><input type="text" id="returnTime"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Logs Viewer -->
     <div id="logViewer">
       <h2>Log Viewer</h2>
       <table id="logTable">
-        <thead>
-          <tr>
-            <th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th>
-            <th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th>
-          </tr>
-      </thead>
+        <thead><tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr></thead>
         <tbody></tbody>
       </table>
       <button class="btn btn-export" id="btnResetLog">Reset Log</button>
-      <button class="btn btn-back"    id="btnBack">Back</button>
+      <button class="btn btn-back" id="btnBack">Back</button>
     </div>
-  </div>  
+  </div>
 
-  <!-- ES5 JavaScript -->
   <script>
-    // Data stores
     var vehicles = {
       "HiAce Bus - 656 GG4": [],
       "Outlander - 717 AM3": [],
@@ -247,171 +160,88 @@
     var keysOut = {};
     var logData = [];
 
-    // Load saved logData
     var stored = localStorage.getItem('vehicleKeyLog');
     if (stored) {
-      try { logData = JSON.parse(stored); }
-      catch(e) { logData = []; }
+      try { logData = JSON.parse(stored); } catch(e) { logData = []; }
     }
-
-    // Rebuild state
     for (var i = 0; i < logData.length; i++) {
       var e = logData[i];
       if (e["Date In"] === "") {
         vehicles[e.Vehicle].push(e.Name);
-        keysOut[e.Name] = {
-          Participant: e.Participant,
-          Vehicle:     e.Vehicle,
-          DateOut:     e["Date Out"],
-          TimeOut:     e["Time Out"]
-        };
+        keysOut[e.Name] = { Participant: e.Participant, Vehicle: e.Vehicle, DateOut: e["Date Out"], TimeOut: e["Time Out"] };
       }
     }
 
     function saveToLocal() {
-      try { localStorage.setItem('vehicleKeyLog', JSON.stringify(logData)); }
-      catch(e) { console.warn("Failed to save logData", e); }
+      try { localStorage.setItem('vehicleKeyLog', JSON.stringify(logData)); } catch(e) { console.warn("Failed to save logData", e); }
     }
+    function pad2(n) { return n < 10 ? "0" + n : n; }
+    function formatDate(d) { return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear(); }
+    function formatTime(d) { return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
 
-    
-    function pad2(n){ return n<10? "0"+n : n; }
-    function formatDate(d){
-      return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear();
-    }
-    function formatTime(d){
-      return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
-    }
-        // Screens
-    function setupWelcomeScreen(){    
-      document.getElementById('welcomeScreen').style.display = 'block';
-      document.getElementById('mainInterface').style.display = 'none';
-      document.getElementById('logViewer').style.display = 'none';
-    }
-    function setupMainInterface(){   
+    function setupWelcomeScreen(){ document.getElementById('welcomeScreen').style.display = 'block'; document.getElementById('mainInterface').style.display = 'none'; document.getElementById('logViewer').style.display = 'none'; }
+    function setupMainInterface(){
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
       document.getElementById('logViewer').style.display = 'none';
-      document.getElementById('outName').value = "";
-      document.getElementById('outParticipant').value = "";
-      document.getElementById('outVehicle').value = "";
-      document.getElementById('returnDate').value = formatDate(new Date());
-      document.getElementById('returnTime').value = formatTime(new Date());
+      document.getElementById('outName').value = ""; document.getElementById('outParticipant').value = ""; document.getElementById('outVehicle').value = "";
+      document.getElementById('returnDate').value = formatDate(new Date()); document.getElementById('returnTime').value = formatTime(new Date());
       updateReturnNames();
-       
     }
-    function showLogViewer(){      
-      document.getElementById('mainInterface').style.display = 'none';
-      document.getElementById('logViewer').style.display = 'block';
-      renderLogTable();
+    function showLogViewer(){ document.getElementById('mainInterface').style.display = 'none'; document.getElementById('logViewer').style.display = 'block'; renderLogTable(); }
+
+    var toggle = document.getElementById('manualOutToggle');
+    var manualFields = document.getElementById('manualOutFields');
+    var outDateManual = document.getElementById('outDateManual');
+    var outTimeManual = document.getElementById('outTimeManual');
+
+    function signOut(){
+      var name    = document.getElementById('outName').value.trim();
+      var part    = document.getElementById('outParticipant').value.trim();
+      var dest    = document.getElementById('outDestination').value.trim();
+      var vehicle = document.getElementById('outVehicle').value;
+      if (!name || !part || !dest || !vehicle) { alert("Please fill out all fields."); return; }
+      if (vehicles[vehicle].length >= 2) { alert("All keys for " + vehicle + " are signed out."); return; }
+      var now  = new Date();
+      var dOut = formatDate(now);
+      var tOut = formatTime(now);
+      if (toggle.checked) { dOut = outDateManual.value.trim(); tOut = outTimeManual.value.trim(); }
+      vehicles[vehicle].push(name);
+      keysOut[name] = { Participant: part, Vehicle: vehicle, DateOut: dOut, TimeOut: tOut };
+      logData.push({ Name: name, Participant: part, Destination: dest, Vehicle: vehicle, "Date Out": dOut, "Time Out": tOut, "Date In": "", "Time In": "" });
+      alert(name + " signed out a key for " + vehicle + ".");
+      saveToLocal();
+      document.getElementById('vehiclePreview').style.display = 'none';
+      setupMainInterface();
     }
-    
-    const toggle = document.getElementById('manualOutToggle');
-    const manualFields = document.getElementById('manualOutFields');
-    const outDateManual = document.getElementById('outDateManual');
-    const outTimeManual = document.getElementById('outTimeManual');
-    
-    // Sign Out
-function signOut(){
-  // 1) grab form values
-  const name    = document.getElementById('outName').value.trim();
-  const part    = document.getElementById('outParticipant').value.trim();
-  const dest    = document.getElementById('outDestination').value.trim();
-  const vehicle = document.getElementById('outVehicle').value;
 
-  // 2) basic validation
-  if (!name || !part || !dest || !vehicle) {
-    alert("Please fill out all fields.");
-    return;
-  }
-  if (vehicles[vehicle].length >= 2) {
-    alert("All keys for " + vehicle + " are signed out.");
-    return;
-  }
-
-  // 3) timestamp—only once
-  const now  = new Date();
-  let dOut   = formatDate(now);
-  let tOut   = formatTime(now);
-
-  // 4) manual override, if toggled on
-  if (toggle.checked) {
-    dOut = outDateManual.value.trim();
-    tOut = outTimeManual.value.trim();
-  }
-
-  // 5) update in-memory state
-  vehicles[vehicle].push(name);
-  keysOut[name] = {
-    Participant: part,
-    Vehicle:     vehicle,
-    DateOut:     dOut,
-    TimeOut:     tOut
-  };
-
-  // 6) push into the log array
-  logData.push({
-    Name:         name,
-    Participant:  part,
-    Destination:  dest,
-    Vehicle:      vehicle,
-    "Date Out":   dOut,
-    "Time Out":   tOut,
-    "Date In":    "",
-    "Time In":    ""
-  });
-
-  // 7) persist and reset UI
-  alert(`${name} signed out a key for ${vehicle}.`);
-  saveToLocal();
-  document.getElementById('vehiclePreview').style.display = 'none';
-  setupMainInterface();
-}
-
-   function signIn(){
-  // 1) grab dropdown & date/time
-  const sel     = document.getElementById('inName');
-  const name    = sel.value;
-  const retDate = document.getElementById('returnDate').value.trim();
-  const retTime = document.getElementById('returnTime').value.trim();
-
-  // 2) validate
-  if (!name) {
-    alert("Please select a name.");
-    return;
-  }
-  if (!keysOut[name]) {
-    alert("This name does not have a key signed out.");
-    return;
-  }
-
-  // 3) remove from in-flight state
-  const rec = keysOut[name];
-  delete keysOut[name];
-  const idx = vehicles[rec.Vehicle].indexOf(name);
-  if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
-
-  // 4) write back into logData
-  for (let i = 0; i < logData.length; i++) {
-    const e = logData[i];
-    if (e.Name === name && e.Vehicle === rec.Vehicle && !e["Date In"]) {
-      e["Date In"] = retDate;
-      e["Time In"] = retTime;
-      break;
+    function signIn(){
+      var sel = document.getElementById('inName');
+      var name = sel.value;
+      var retDate = document.getElementById('returnDate').value.trim();
+      var retTime = document.getElementById('returnTime').value.trim();
+      if (!name) { alert("Please select a name."); return; }
+      if (!keysOut[name]) { alert("This name does not have a key signed out."); return; }
+      var rec = keysOut[name]; delete keysOut[name];
+      var idx = vehicles[rec.Vehicle].indexOf(name);
+      if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
+      for (var i=0; i<logData.length; i++) {
+        var e = logData[i];
+        if (e.Name === name && e.Vehicle === rec.Vehicle && !e["Date In"]) {
+          e["Date In"] = retDate;
+          e["Time In"] = retTime;
+          break;
+        }
+      }
+      alert(name + " returned a key for " + rec.Vehicle + ".");
+      saveToLocal();
+      setupMainInterface();
     }
-  }
 
-  // 5) persist & reset UI
-  alert(`${name} returned a key for ${rec.Vehicle}.`);
-  saveToLocal();
-  setupMainInterface();
-}
-
-
-    // Dropdown
     function updateReturnNames(){
       var sel = document.getElementById('inName');
       sel.innerHTML = '<option value="">-- Select Name --</option>';
-      for (var n in keysOut){
+      for (var n in keysOut) {
         var o = document.createElement('option');
         o.value = n; o.textContent = n;
         sel.appendChild(o);
@@ -434,16 +264,21 @@ function signOut(){
           row.appendChild(td);
         }
         tbody.appendChild(row);
-        tbody.querySelectorAll('.editable-cell').forEach(cell => {
-          cell.addEventListener('blur', e => {
-            const rowIdx = cell.parentElement.rowIndex - 1;       // adjust for header
-            const colKey = cols[cell.cellIndex];
-            logData[rowIdx][colKey] = cell.textContent.trim();
-            saveToLocal();
-          });
-        });
-      }
-    }
+        // find all editable cells
+var cells = tbody.querySelectorAll('.editable-cell');
+// loop in ES5 style
+for (var i = 0; i < cells.length; i++) {
+  (function(cell) {
+    cell.addEventListener('blur', function(e) {
+      // …save logic (exactly what you had before)… 
+      var rowIdx = cell.parentElement.rowIndex - 1;
+      var colKey = cols[cell.cellIndex];
+      logData[rowIdx][colKey] = cell.textContent.trim();
+      saveToLocal();
+    });
+  })(cells[i]);
+}
+
 
     
     // Logs button: 
@@ -517,15 +352,16 @@ document.getElementById('outDestination').addEventListener('keydown', function(e
 });
 
    
-toggle.addEventListener('change', () => {
+toggle.addEventListener('change', function() {
   if (toggle.checked) {
     manualFields.style.display = 'flex';
     outDateManual.value = formatDate(new Date());
-    outTimeManual.value = formatTime(new Date());
+    outTimeManual.value  = formatTime(new Date());
   } else {
     manualFields.style.display = 'none';
   }
 });
+
 
     // Initialize
     setupWelcomeScreen();
