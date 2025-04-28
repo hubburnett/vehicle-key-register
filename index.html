@@ -53,6 +53,7 @@
     .btn-logs {
       background-color: #6c757d; -webkit-touch-callout: none;
       -webkit-user-select: none; touch-action: manipulation;
+      margin-bottom: 8px;    /* ← space below the Logs button */
     }
     #logViewer { display: none; }
     #logViewer h2 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
@@ -88,6 +89,13 @@
     .inline-flex > * + * {
       margin-left: 10px;
     }
+    .panel-description {
+    margin: 0 0 12px;    /* space below the description */
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.4;
+    }
+
   </style>
 </head>
 <body>
@@ -138,6 +146,15 @@
           <div class="form-group"><label for="inName">Select Name</label><select id="inName"><option value="">-- Select Name --</option></select></div>
           <button class="btn btn-sign-in" id="btnSignIn">Sign In</button><br>
           <button class="btn btn-logs" id="btnLogs">Logs</button>
+
+                   <!-- ← description appears in the “keyboard” area -->
+          <p class="panel-description">
+            This digital key register automatically timestamps every sign-out and sign-in,  
+            fills in vehicle info, and stores your log locally—no paper needed.  
+            To use: Tap “Sign Out” or “Sign In” and the current date/time will auto-fill.  
+            If you need to adjust a timestamp, just check “Enter Date/Time Manually.”
+          </p>
+          
           <div class="form-group inline-flex" style="flex-wrap:wrap;">
             <div style="flex:1;">
               <label for="returnDate">Return Date</label>
