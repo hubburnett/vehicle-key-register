@@ -82,6 +82,12 @@
     #successModal .modal-content h3 {
       margin-bottom: 20px; font-size: 1.4rem; color: #28a745;
     }
+     .inline-flex {
+      display: flex;
+    }
+    .inline-flex > * + * {
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
@@ -104,7 +110,7 @@
       <div class="panels">
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
-          <div class="form-group" style="display: flex; gap: 10px;">
+         <div class="form-group inline-flex">
             <div style="flex: 1;"><label for="outName">Name</label><input type="text" id="outName" placeholder="Name"></div>
             <div style="flex: 1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" placeholder="Participant"></div>
           </div>
@@ -132,9 +138,9 @@
           <div class="form-group"><label for="inName">Select Name</label><select id="inName"><option value="">-- Select Name --</option></select></div>
           <button class="btn btn-sign-in" id="btnSignIn">Sign In</button><br>
           <button class="btn btn-logs" id="btnLogs">Logs</button>
-          <div class="form-group" style="display:flex; gap:10px;">
-            <div style="flex:1;"><label for="returnDate">Return Date (DD-MM-YYYY)</label><input type="text" id="returnDate"></div>
-            <div style="flex:1;"><label for="returnTime">Return Time (HH:MM)</label><input type="text" id="returnTime"></div>
+          <div id="manualOutFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
+            <div style="flex:1;"><label for="returnDate">Return Date</label><input type="text" id="returnDate"></div>
+            <div style="flex:1;"><label for="returnTime">Return Time</label><input type="text" id="returnTime"></div>
           </div>
         </div>
       </div>
