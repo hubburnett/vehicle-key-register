@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -138,13 +138,16 @@
           <div class="form-group"><label for="inName">Select Name</label><select id="inName"><option value="">-- Select Name --</option></select></div>
           <button class="btn btn-sign-in" id="btnSignIn">Sign In</button><br>
           <button class="btn btn-logs" id="btnLogs">Logs</button>
-          <div id="manualInFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
-            <div style="flex:1;"><label for="returnDate">Return Date</label><input type="text" id="returnDate"></div>
-            <div style="flex:1;"><label for="returnTime">Return Time</label><input type="text" id="returnTime"></div>
-          </div>
+          <div class="form-group inline-flex" style="flex-wrap:wrap;">
+            <div style="flex:1;">
+              <label for="returnDate">Return Date (DD-MM-YYYY)</label>
+              <input type="text" id="returnDate">
+            </div>
+            <div style="flex:1;">
+              <label for="returnTime">Return Time (HH:MM)</label>
+              <input type="text" id="returnTime">
+            </div>
         </div>
-      </div>
-    </div>
 
     <div id="logViewer">
       <h2>Log Viewer</h2>
