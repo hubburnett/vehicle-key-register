@@ -166,7 +166,7 @@
 <div class="form-group">
   <label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label>
 </div>
-<div class="form-group" id="manualOutFields" style="display:none; gap:10px; flex-wrap:wrap; display:flex;">
+<div id="manualOutFields" style="display:none; gap:10px; flex-wrap:wrap;">
   <div><label>Date Out</label><input type="text" id="outDateManual"></div>
   <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
 </div>
@@ -304,7 +304,12 @@
       document.getElementById('logViewer').style.display = 'block';
       renderLogTable();
     }
-
+    
+    const toggle = document.getElementById('manualOutToggle');
+    const manualFields = document.getElementById('manualOutFields');
+    const outDateManual = document.getElementById('outDateManual');
+    const outTimeManual = document.getElementById('outTimeManual');
+    
     // Sign Out
 function signOut(){
   // 1) grab form values
@@ -362,32 +367,45 @@ function signOut(){
   setupMainInterface();
 }
 
-    // Sign In
-    function signIn(){
-      var sel = document.getElementById('inName'), name = sel.value,
-          ret = document.getElementById('returnDate').value.trim();
-      if (!name) { alert("Please select a name."); return; }
-      if (!keysOut[name]) { alert("This name does not have a key signed out."); return; }
-      var now = new Date(), tIn = formatTime(now), rec = keysOut[name];
-      delete keysOut[name];
-      var idx = vehicles[rec.Vehicle].indexOf(name);
-      if (idx > -1) vehicles[rec.Vehicle].splice(idx,1);
-      for (var i=0; i<logData.length; i++){
-        var e = logData[i];
-        if (e.Name===name && e.Vehicle===rec.Vehicle && e["Date In"]===""){
-          e["Date In"] = ret; e["Time In"] = tIn; break;
-        }
-        const retDate = document.getElementById('returnDate').value.trim();
-        const retTime = document.getElementById('returnTime').value.trim();
-// …
-        e["Date In"] = retDate;
-        e["Time In"] = retTime;
+   function signIn(){
+  // 1) grab dropdown & date/time
+  const sel     = document.getElementById('inName');
+  const name    = sel.value;
+  const retDate = document.getElementById('returnDate').value.trim();
+  const retTime = document.getElementById('returnTime').value.trim();
 
-      }
-      alert(name + " returned a key for " + rec.Vehicle + ".");
-      saveToLocal();
-      setupMainInterface();
+  // 2) validate
+  if (!name) {
+    alert("Please select a name.");
+    return;
+  }
+  if (!keysOut[name]) {
+    alert("This name does not have a key signed out.");
+    return;
+  }
+
+  // 3) remove from in-flight state
+  const rec = keysOut[name];
+  delete keysOut[name];
+  const idx = vehicles[rec.Vehicle].indexOf(name);
+  if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
+
+  // 4) write back into logData
+  for (let i = 0; i < logData.length; i++) {
+    const e = logData[i];
+    if (e.Name === name && e.Vehicle === rec.Vehicle && !e["Date In"]) {
+      e["Date In"] = retDate;
+      e["Time In"] = retTime;
+      break;
     }
+  }
+
+  // 5) persist & reset UI
+  alert(`${name} returned a key for ${rec.Vehicle}.`);
+  saveToLocal();
+  setupMainInterface();
+}
+
 
     // Dropdown
     function updateReturnNames(){
@@ -498,11 +516,7 @@ document.getElementById('outDestination').addEventListener('keydown', function(e
   }
 });
 
-    const toggle = document.getElementById('manualOutToggle');
-    const manualFields = document.getElementById('manualOutFields');
-    const outDateManual = document.getElementById('outDateManual');
-    const outTimeManual = document.getElementById('outTimeManual');
-
+   
 toggle.addEventListener('change', () => {
   if (toggle.checked) {
     manualFields.style.display = 'flex';
