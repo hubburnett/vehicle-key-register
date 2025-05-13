@@ -305,15 +305,11 @@
     }
          
     // UI setup functions
-    function returnToWelcome() {
-  setupWelcomeScreen();
-  clearFormInputs();
-
-  // Hide all other panels (optional safety)
-  if (document.getElementById("mainInterface")) {
-    document.getElementById("mainInterface").style.display = "none";
-  }
-}
+    function setupWelcomeScreen() {
+      document.getElementById('welcomeScreen').style.display = 'block';
+      document.getElementById('mainInterface').style.display = 'none';
+      document.getElementById('logViewer').style.display = 'none';
+    }
     function setupMainInterface() {
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
@@ -615,58 +611,31 @@
       });
   
     // Hide UI and return to welcome on visibility change
-document.addEventListener('visibilitychange', function() {
-  if (document.hidden) {
-    returnToWelcome();
-  }
-});
-
-// Hide keyboard on Enter in Destination field
-document.getElementById('outDestination').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' || e.keyCode === 13) {
-    e.preventDefault();
-    this.blur();
-  }
-});
-
-// Toggle manual date/time fields
-toggle.addEventListener('change', function() {
-  if (toggle.checked) {
-    manualFields.style.display = 'flex';
-    outDateManual.value = formatDate(new Date());
-    outTimeManual.value  = formatTime(new Date());
-  } else {
-    manualFields.style.display = 'none';
-  }
-});
-
-// Auto-reset after 5 minutes of inactivity
-var inactivityTimer;
-function resetInactivityTimer() {
-  clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(function() {
-    returnToWelcome();
-    console.log("[Info] Auto-reset due to 5 min inactivity.");
-  }, 5 * 60 * 1000); // 5 minutes
-}
-
-// Trigger reset timer on any interaction
-document.addEventListener('click', resetInactivityTimer);
-document.addEventListener('touchstart', resetInactivityTimer);
-document.addEventListener('keydown', resetInactivityTimer);
-
-// Clear all inputs
-function clearFormInputs() {
-  document.getElementById("outName").value = "";
-  document.getElementById("outParticipant").value = "";
-  document.getElementById("outDestination").value = "";
-  document.getElementById("outDateManual").value = formatDate(new Date());
-  document.getElementById("outTimeManual").value = formatTime(new Date());
-  var vehicleImage = document.getElementById("vehicleImage");
-  if (vehicleImage) vehicleImage.style.display = "none";
-}
-
-// Initialize
-setupWelcomeScreen();
-resetInactivityTimer();
-
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) setupWelcomeScreen();
+    });
+  
+    // Hide keyboard on Enter in Destination field
+    document.getElementById('outDestination').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        this.blur();
+      }
+    });
+  
+    // Toggle manual date/time fields
+    toggle.addEventListener('change', function() {
+      if (toggle.checked) {
+        manualFields.style.display = 'flex';
+        outDateManual.value = formatDate(new Date());
+        outTimeManual.value  = formatTime(new Date());
+      } else {
+        manualFields.style.display = 'none';
+      }
+    });
+  
+    // Initialize
+    setupWelcomeScreen();
+  </script>
+</body>
+</html>
