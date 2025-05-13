@@ -305,11 +305,15 @@
     }
          
     // UI setup functions
-    function setupWelcomeScreen() {
-      document.getElementById('welcomeScreen').style.display = 'block';
-      document.getElementById('mainInterface').style.display = 'none';
-      document.getElementById('logViewer').style.display = 'none';
-    }
+    function returnToWelcome() {
+  setupWelcomeScreen();
+  clearFormInputs();
+
+  // Hide all other panels (optional safety)
+  if (document.getElementById("mainInterface")) {
+    document.getElementById("mainInterface").style.display = "none";
+  }
+}
     function setupMainInterface() {
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
@@ -613,8 +617,7 @@
     // Hide UI and return to welcome on visibility change
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
-    setupWelcomeScreen();
-    clearFormInputs();
+    returnToWelcome();
   }
 });
 
@@ -642,8 +645,7 @@ var inactivityTimer;
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
   inactivityTimer = setTimeout(function() {
-    setupWelcomeScreen();
-    clearFormInputs();
+    returnToWelcome();
     console.log("[Info] Auto-reset due to 5 min inactivity.");
   }, 5 * 60 * 1000); // 5 minutes
 }
