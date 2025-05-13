@@ -12,7 +12,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      transform: scale(0.85);
+      transform: scale(0.90);
       transform-origin: top center;
       font-family: Arial, sans-serif;
       background-color: #fdf1e9;
@@ -611,31 +611,60 @@
       });
   
     // Hide UI and return to welcome on visibility change
-    document.addEventListener('visibilitychange', function() {
-      if (document.hidden) setupWelcomeScreen();
-    });
-  
-    // Hide keyboard on Enter in Destination field
-    document.getElementById('outDestination').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.keyCode === 13) {
-        e.preventDefault();
-        this.blur();
-      }
-    });
-  
-    // Toggle manual date/time fields
-    toggle.addEventListener('change', function() {
-      if (toggle.checked) {
-        manualFields.style.display = 'flex';
-        outDateManual.value = formatDate(new Date());
-        outTimeManual.value  = formatTime(new Date());
-      } else {
-        manualFields.style.display = 'none';
-      }
-    });
-  
-    // Initialize
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
     setupWelcomeScreen();
-  </script>
-</body>
-</html>
+    clearFormInputs();
+  }
+});
+
+// Hide keyboard on Enter in Destination field
+document.getElementById('outDestination').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.keyCode === 13) {
+    e.preventDefault();
+    this.blur();
+  }
+});
+
+// Toggle manual date/time fields
+toggle.addEventListener('change', function() {
+  if (toggle.checked) {
+    manualFields.style.display = 'flex';
+    outDateManual.value = formatDate(new Date());
+    outTimeManual.value  = formatTime(new Date());
+  } else {
+    manualFields.style.display = 'none';
+  }
+});
+
+// Auto-reset after 5 minutes of inactivity
+var inactivityTimer;
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(function() {
+    setupWelcomeScreen();
+    clearFormInputs();
+    console.log("[Info] Auto-reset due to 5 min inactivity.");
+  }, 5 * 60 * 1000); // 5 minutes
+}
+
+// Trigger reset timer on any interaction
+document.addEventListener('click', resetInactivityTimer);
+document.addEventListener('touchstart', resetInactivityTimer);
+document.addEventListener('keydown', resetInactivityTimer);
+
+// Clear all inputs
+function clearFormInputs() {
+  document.getElementById("outName").value = "";
+  document.getElementById("outParticipant").value = "";
+  document.getElementById("outDestination").value = "";
+  document.getElementById("outDateManual").value = formatDate(new Date());
+  document.getElementById("outTimeManual").value = formatTime(new Date());
+  var vehicleImage = document.getElementById("vehicleImage");
+  if (vehicleImage) vehicleImage.style.display = "none";
+}
+
+// Initialize
+setupWelcomeScreen();
+resetInactivityTimer();
+
