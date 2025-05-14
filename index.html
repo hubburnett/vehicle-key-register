@@ -108,6 +108,7 @@
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
       <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>
+      <button onclick="showLocalLog()">Show Log Data</button>
     </div>
 
     <div id="mainInterface">
@@ -333,7 +334,15 @@
       document.getElementById('logViewer').style.display = 'block';
       renderLogTable();
     }
-  
+
+    function showLocalLog() {
+      var data = localStorage.getItem('vehicleKeyLog');
+      if (!data) {
+        alert("No log data found.");
+      } else {
+        alert("Log Data:\n" + data);
+      }
+    }
     // Sign-out logic
     var toggle = document.getElementById('manualOutToggle');
     var manualFields = document.getElementById('manualOutFields');
