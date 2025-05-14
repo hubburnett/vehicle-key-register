@@ -108,7 +108,7 @@
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
       <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>
-      <button onclick="showLocalLog()">Show Log Data</button>
+      <button onclick="launchRecoveryTool()">Recover Old Logs</button>
     </div>
 
     <div id="mainInterface">
@@ -335,14 +335,83 @@
       renderLogTable();
     }
 
-    function showLocalLog() {
-      var data = localStorage.getItem('vehicleKeyLog');
-      if (!data) {
-        alert("No log data found.");
-      } else {
-        alert("Log Data:\n" + data);
+    function launchRecoveryTool() {
+      var container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.top = '10%';
+      container.style.left = '10%';
+      container.style.width = '80%';
+      container.style.height = '80%';
+      container.style.background = '#fff';
+      container.style.border = '2px solid #000';
+      container.style.padding = '20px';
+      container.style.overflow = 'auto';
+      container.style.zIndex = 9999;
+    
+      var closeBtn = document.createElement('button');
+      closeBtn.textContent = 'Close';
+      closeBtn.style.marginBottom = '10px';
+      closeBtn.onclick = function () {
+        document.body.removeChild(container);
+      };
+    
+      container.appendChild(closeBtn);
+    
+      var found = false;
+      for (var key in localStorage) {
+        try {
+          var val = localStorage.getItem(key);
+          if (val && val[0] === '[' && val.indexOf('Date Out') !== -1) {
+            found = true;
+    
+            var section = document.createElement('div');
+            section.style.border = '1px solid #ccc';
+            section.style.marginBottom = '10px';
+            section.style.padding = '10px';
+            section.style.background = '#f9f9f9';
+    
+            var title = document.createElement('strong');
+            title.textContent = 'Key: "' + key + '"';
+            section.appendChild(title);
+    
+            var preview = document.createElement('pre');
+            preview.style.whiteSpace = 'pre-wrap';
+            preview.style.maxHeight = '200px';
+            preview.style.overflowY = 'auto';
+            preview.textContent = val;
+            section.appendChild(preview);
+    
+            var restoreBtn = document.createElement('button');
+            restoreBtn.textContent = 'Restore This Log';
+            restoreBtn.onclick = (function (k, v) {
+              return function () {
+                if (confirm("This will replace your current log. Proceed?")) {
+                  logData = JSON.parse(v);
+                  saveToLocal();
+                  alert("Log restored from key: " + k);
+                  updateReturnNames();
+                  if (document.getElementById("logViewer").style.display === 'block') {
+                    renderLogTable();
+                  }
+                }
+              };
+            })(key, val);
+    
+            section.appendChild(restoreBtn);
+            container.appendChild(section);
+          }
+        } catch (e) {
+          console.warn("Skipped key due to error:", key);
+        }
       }
+    
+      if (!found) {
+        container.innerHTML += "<p>No restorable data found.</p>";
+      }
+    
+      document.body.appendChild(container);
     }
+    
     // Sign-out logic
     var toggle = document.getElementById('manualOutToggle');
     var manualFields = document.getElementById('manualOutFields');
