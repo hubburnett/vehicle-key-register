@@ -614,7 +614,16 @@
     document.addEventListener('visibilitychange', function() {
       if (document.hidden) setupWelcomeScreen();
     });
-  
+
+    // Fallback: Reset to welcome when page becomes active again
+    window.addEventListener('pageshow', function() {
+      returnToWelcome();
+    }, false);
+    
+    window.addEventListener('focus', function() {
+      returnToWelcome();
+    }, false);
+
     // Hide keyboard on Enter in Destination field
     document.getElementById('outDestination').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.keyCode === 13) {
