@@ -537,6 +537,14 @@
 
 
     function restoreFromGistCSV() {
+      var correctPassword = "admin123"; // ✅ Set your password here
+      var attempt = prompt("Enter admin password to restore log:");
+    
+      if (attempt !== correctPassword) {
+        alert("❌ Incorrect password. Restore cancelled.");
+        return;
+      }
+    
       var token = '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';
       var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
     
@@ -574,6 +582,7 @@
     
       xhr.send();
     }
+
 
 
   
