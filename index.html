@@ -509,68 +509,72 @@
       var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
       var csv = convertLogToCSV();
     
-      var payload = {
+      var payload = JSON.stringify({
         files: {
           "vehicle_key_log.csv": {
             content: csv
           }
         }
+      });
+    
+      var xhr = new XMLHttpRequest();
+      xhr.open("PATCH", 'https://api.github.com/gists/' + gistId, true);
+      xhr.setRequestHeader("Authorization", "token " + token);
+      xhr.setRequestHeader("Content-Type", "application/json");
+    
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log("[✓] Gist updated with latest CSV log.");
+          } else {
+            console.warn("[!] Gist update failed:", xhr.statusText);
+          }
+        }
       };
     
-      fetch('https://api.github.com/gists/' + gistId, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': 'token ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(function(res) {
-        if (!res.ok) throw new Error("Failed to update gist");
-        console.log("[✓] Gist updated with latest CSV log.");
-      })
-      .catch(function(err) {
-        console.warn("[!] Gist update failed:", err.message);
-      });
+      xhr.send(payload);
     }
+
 
     function restoreFromGistCSV() {
       var token = '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';
       var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
     
-      fetch('https://api.github.com/gists/' + gistId, {
-        headers: {
-          'Authorization': 'token ' + token
-        }
-      })
-      .then(function(res) {
-        if (!res.ok) throw new Error("Failed to fetch gist");
-        return res.json();
-      })
-      .then(function(data) {
-        var content = data.files["vehicle_key_log.csv"].content;
-        var lines = content.trim().split("\n");
-        var headers = lines[0].split(",");
-        logData = [];
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", 'https://api.github.com/gists/' + gistId, true);
+      xhr.setRequestHeader("Authorization", "token " + token);
     
-        for (var i = 1; i < lines.length; i++) {
-          var cells = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // CSV-safe split
-          var obj = {};
-          for (var j = 0; j < headers.length; j++) {
-            obj[headers[j]] = cells[j].replace(/^"|"$/g, "").replace(/""/g, '"');
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            var data = JSON.parse(xhr.responseText);
+            var content = data.files["vehicle_key_log.csv"].content;
+            var lines = content.trim().split("\n");
+            var headers = lines[0].split(",");
+            logData = [];
+    
+            for (var i = 1; i < lines.length; i++) {
+              var cells = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // CSV-safe split
+              var obj = {};
+              for (var j = 0; j < headers.length; j++) {
+                obj[headers[j]] = cells[j].replace(/^"|"$/g, "").replace(/""/g, '"');
+              }
+              logData.push(obj);
+            }
+    
+            saveToLocal();
+            updateReturnNames();
+            renderLogTable();
+            alert("✅ Log restored from Gist.");
+          } else {
+            alert("Restore failed: " + xhr.statusText);
           }
-          logData.push(obj);
         }
+      };
     
-        saveToLocal();
-        updateReturnNames();
-        renderLogTable();
-        alert("✅ Log restored from Gist.");
-      })
-      .catch(function(err) {
-        alert("Restore failed: " + err.message);
-      });
+      xhr.send();
     }
+
 
   
     // Populate the Sign-In dropdown
