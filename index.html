@@ -617,11 +617,11 @@
 
     // Fallback: Reset to welcome when page becomes active again
     window.addEventListener('pageshow', function() {
-      returnToWelcome();
+      setupWelcomeScreen();
     }, false);
     
     window.addEventListener('focus', function() {
-      returnToWelcome();
+      setupWelcomeScreen();
     }, false);
 
     // Hide keyboard on Enter in Destination field
