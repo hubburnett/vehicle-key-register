@@ -107,8 +107,7 @@
     <div id="welcomeScreen">
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
-      <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>
-      <button onclick="launchRecoveryTool()">Recover Old Logs</button>
+      <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>     
     </div>
 
     <div id="mainInterface">
@@ -172,7 +171,7 @@
         </thead>
         <tbody></tbody>
       </table>
-      <button class="btn btn-export" id="btnResetLog">Reset Log</button>
+      <button class="btn btn-export" id="btnResetLog">Reset from Gist</button>
       <button class="btn btn-back" id="btnBack">Back</button>
     </div>
   </div> <!-- /.container -->
@@ -488,7 +487,89 @@
     
       alert(name + " returned a key for " + rec.Vehicle + ".");
       saveToLocal();
+      updateGistCSV();
       setupMainInterface();
+    }
+
+    function convertLogToCSV() {
+      var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
+      var rows = [cols.join(",")];
+      for (var i = 0; i < logData.length; i++) {
+        var entry = logData[i];
+        var row = cols.map(function(c) {
+          return '"' + (entry[c] || "").replace(/"/g, '""') + '"';
+        }).join(",");
+        rows.push(row);
+      }
+      return rows.join("\n");
+    }
+
+    function updateGistCSV() {
+      var token = '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';
+      var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
+      var csv = convertLogToCSV();
+    
+      var payload = {
+        files: {
+          "vehicle_key_log.csv": {
+            content: csv
+          }
+        }
+      };
+    
+      fetch('https://api.github.com/gists/' + gistId, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': 'token ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error("Failed to update gist");
+        console.log("[✓] Gist updated with latest CSV log.");
+      })
+      .catch(function(err) {
+        console.warn("[!] Gist update failed:", err.message);
+      });
+    }
+
+    function restoreFromGistCSV() {
+      var token = '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';
+      var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
+    
+      fetch('https://api.github.com/gists/' + gistId, {
+        headers: {
+          'Authorization': 'token ' + token
+        }
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error("Failed to fetch gist");
+        return res.json();
+      })
+      .then(function(data) {
+        var content = data.files["vehicle_key_log.csv"].content;
+        var lines = content.trim().split("\n");
+        var headers = lines[0].split(",");
+        logData = [];
+    
+        for (var i = 1; i < lines.length; i++) {
+          var cells = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // CSV-safe split
+          var obj = {};
+          for (var j = 0; j < headers.length; j++) {
+            obj[headers[j]] = cells[j].replace(/^"|"$/g, "").replace(/""/g, '"');
+          }
+          logData.push(obj);
+        }
+    
+        saveToLocal();
+        updateReturnNames();
+        renderLogTable();
+        alert("✅ Log restored from Gist.");
+      })
+      .catch(function(err) {
+        alert("Restore failed: " + err.message);
+      });
     }
 
   
@@ -580,20 +661,11 @@
   
     document.getElementById('btnResetLog').addEventListener('click', function(e) {
       e.preventDefault();
-      if (confirm("This will erase all log data. Are you sure?")) {
-        logData = [];
-        keysOut = {};
-        vehicles = {
-          "HiAce Bus - 656 GG4": [],
-          "Outlander - 717 AM3": [],
-          "Outlander - 402 LG5": []
-        };
-        saveToLocal();
-        renderLogTable();
-        updateReturnNames();
-        alert("Log has been reset.");
+      if (confirm("Restore log from GitHub Gist? This will replace your current data.")) {
+        restoreFromGistCSV();
       }
     });
+
   
     // Vehicle preview on select
     var vehicleImageMap = {
