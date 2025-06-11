@@ -300,6 +300,10 @@
     return pad2(h) + ":" + pad2(m) + " " + ampm;
     }
 
+  function isValidAmPm(t) {
+    return /^[0-1]?\d:[0-5]\d\s?(AM|PM)$/i.test(t);
+    }
+         
     // UI setup functions
     function setupWelcomeScreen() {
       document.getElementById('welcomeScreen').style.display = 'block';
@@ -695,18 +699,7 @@
   
     // Hide UI and return to welcome on visibility change
     document.addEventListener('visibilitychange', function() {
-      if (document.hidden) {
-        setupWelcomeScreen();
-      } else {
-        // Refresh timestamp fields when returning from sleep
-        var now = new Date();
-        document.getElementById('returnDate').value = formatDate(now);
-        document.getElementById('returnTime').value = formatTime(now);
-        if (toggle.checked) {
-          outDateManual.value = formatDate(now);
-          outTimeManual.value = formatTime(now);
-        }
-      }
+      if (document.hidden) setupWelcomeScreen();
     });
 
     // Fallback: Reset to welcome when page becomes active again
