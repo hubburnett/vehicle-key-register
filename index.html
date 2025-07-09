@@ -117,16 +117,15 @@
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
           <div class="form-group inline-flex">
-            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName" placeholder="Name"></div>
-            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" placeholder="Participant"
-               style="text-transform:uppercase;" autocapitalize="characters"></div>
+            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
+            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters"></div>
           </div>
           <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label></div>
           <div id="manualOutFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
             <div><label>Date Out</label><input type="text" id="outDateManual"></div>
             <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
           </div>
-          <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination" placeholder="Destination"></div>
+          <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination"></div>
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
             <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; width:200px; height:auto; margin-bottom:10px;">
@@ -153,10 +152,9 @@
             <div style="flex:1;"><label for="returnTime">Return Time</label><input type="text" id="returnTime"></div>
 
             <p class="panel-description">
-            This digital key register automatically timestamps every sign-out and sign-in,
-            fills in vehicle info, and stores your log locally—no paper needed.
-            To use: Tap “Sign Out” or “Sign In” and the date/time will auto-fill.
-            If you need to adjust a timestamp, check “Enter Date/Time Manually.”
+
+            This digital key register automatically timestamps every sign-in and sign-out,
+            fills in vehicle info, and stores the log securely.
             </p>
             
           </div>
