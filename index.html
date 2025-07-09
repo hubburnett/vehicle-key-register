@@ -176,6 +176,19 @@
   </div> <!-- /.container -->
   <script>
 
+      var inactivityTimer;
+      var justUnlocked = false;
+
+
+      function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(function () {
+          console.log("[✓] Auto-reset after 5 min of inactivity.");
+          setupWelcomeScreen();
+        }, 5 * 60 * 1000); // 5 minutes
+      }
+
+    
       function normalizeDate(s) {
       var re = /^(\d{1,2})([\/\-])(\d{1,2})\2(\d{2}|\d{4})$/;
       var m  = s.match(re);
@@ -309,6 +322,18 @@
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
     }
+    
+    ['click', 'touchstart', 'keydown'].forEach(function(evt) {
+      document.addEventListener(evt, function () {
+        justUnlocked = true;
+        setTimeout(function () {
+          justUnlocked = false;
+        }, 1000); // cool-off so wake detection won't reset
+        resetInactivityTimer();
+      });
+    });
+
+    
     function setupMainInterface() {
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
@@ -701,14 +726,19 @@
       if (document.hidden) setupWelcomeScreen();
     });
 
-    // Fallback: Reset to welcome when page becomes active again
-    window.addEventListener('pageshow', function() {
-      setupWelcomeScreen();
-    }, false);
-    
-    window.addEventListener('focus', function() {
-      setupWelcomeScreen();
-    }, false);
+   window.addEventListener('focus', function() {
+    if (!justUnlocked) {
+      setTimeout(function() {
+        if (!justUnlocked) {
+          setupWelcomeScreen();
+        }
+      }, 60 * 1000); // 1 min grace period
+    }
+  });
+  
+  window.addEventListener('pageshow', function() {
+    justUnlocked = false;
+  });
 
     // Hide keyboard on Enter in Destination field
     document.getElementById('outDestination').addEventListener('keydown', function(e) {
@@ -731,6 +761,7 @@
   
     // Initialize
     setupWelcomeScreen();
+    resetInactivityTimer();  // Start the timer when the app loads
   </script>
 </body>
 </html>
