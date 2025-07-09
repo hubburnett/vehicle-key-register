@@ -50,10 +50,18 @@
       height: auto;
       line-height: 1.4;
     }
-    .btn { display: block; width: 100%; padding: 15px; border: none;
-      border-radius: 4px; font-size: 1.1rem; color: #fff;
-      cursor: pointer; margin-top: 10px;
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 1.6rem; /* Was 1.1rem */
+      color: #fff;
+      cursor: pointer;
+      margin-top: 10px;
     }
+
     .btn-sign-out { background-color: #d9534f; }
     .btn-sign-in  { background-color: #5cb85c; }
     .btn-logs {
@@ -675,32 +683,33 @@
       }
     }
   
-    // Bind the Logs button with touchend + click fallback
-    var btnLogs = document.getElementById('btnLogs');
-    if (!btnLogs) {
-      console.warn("⚠️ #btnLogs not found—check your HTML nesting!");
-    } else {
-      function openLogs(e) {
-        e.preventDefault();
-        showLogViewer();
-      }
-      btnLogs.addEventListener('touchend', openLogs, { passive: false });
-      btnLogs.addEventListener('click',    openLogs);
-    }
-  
-    // Other event bindings
+    // Uniform event bindings for all buttons using touchend
+
+    // Logs Button
+    document.getElementById('btnLogs').addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showLogViewer();
+    }, { passive: false });
+    
+    // Continue Button
     document.getElementById('continueBtn').addEventListener('touchend', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       setupMainInterface();
     }, { passive: false });
-  
+    
+    // Sign Out Button
     document.getElementById('btnSignOut').addEventListener('touchend', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       signOut();
     }, { passive: false });
-  
+    
+    // Sign In Button
     document.getElementById('btnSignIn').addEventListener('touchend', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       signIn();
     }, { passive: false });
   
