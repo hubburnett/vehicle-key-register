@@ -154,22 +154,41 @@
         </div>
 
         <!-- Sign In Panel -->
-        <div class="panel" id="signInPanel">
-          <h3>Sign In</h3>
-          <div class="form-group"><label for="inName">Select Name</label><select id="inName"><option value="">-- Select Name --</option></select></div>
-          <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
-          <button class="btn btn-logs" id="btnLogs">Logs</button>
-
-          
-          <div class="form-group inline-flex" style="flex-wrap:wrap;">
-            <div style="flex:1;"><label for="returnDate">Return Date</label><input type="text" id="returnDate"></div>
-            <div style="flex:1;"><label for="returnTime">Return Time</label><input type="text" id="returnTime"></div>
-
-            <p class="panel-description">
-
-            This digital key register automatically timestamps every sign-in and sign-out,
-            fills in vehicle info, and stores the log securely.
-            </p>
+    <div class="panel" id="signInPanel">
+      <h3>Sign In</h3>
+    
+      <!-- 1. Select Name -->
+      <div class="form-group">
+        <label for="inName">Select Name</label>
+        <select id="inName">
+          <option value="">-- Select Name --</option>
+        </select>
+      </div>
+    
+      <!-- 2. Return Date + Time -->
+      <div class="form-group inline-flex" style="flex-wrap:wrap;">
+        <div style="flex:1;">
+          <label for="returnDate">Return Date</label>
+          <input type="text" id="returnDate">
+        </div>
+        <div style="flex:1;">
+          <label for="returnTime">Return Time</label>
+          <input type="text" id="returnTime">
+        </div>
+      </div>
+    
+      <!-- 3. Logs button -->
+      <button class="btn btn-logs" id="btnLogs">Logs</button>
+    
+      <!-- 4. Description -->
+      <p class="panel-description">
+        This digital key register automatically timestamps every sign-in and sign-out,
+        fills in vehicle info, and stores the log securely.
+      </p>
+    
+      <!-- 5. Sign In button -->
+      <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
+    </div>
             
           </div>
         </div> <!-- /#signInPanel -->
