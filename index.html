@@ -44,6 +44,12 @@
       width: 100%; padding: 16px; font-size: 1.4rem;
       border: 1px solid #ccc; border-radius: 4px;
     }
+    select {
+      font-size: 1.4rem;
+      padding: 14px;
+      height: auto;
+      line-height: 1.4;
+    }
     .btn { display: block; width: 100%; padding: 15px; border: none;
       border-radius: 4px; font-size: 1.1rem; color: #fff;
       cursor: pointer; margin-top: 10px;
@@ -325,15 +331,22 @@
     
     ['click', 'touchstart', 'keydown'].forEach(function(evt) {
       document.addEventListener(evt, function () {
-        justUnlocked = true;
-        setTimeout(function () {
-          justUnlocked = false;
-        }, 1000); // cool-off so wake detection won't reset
         resetInactivityTimer();
+        updateDefaultTimestamps();
       });
     });
 
+    function updateDefaultTimestamps() {
+      var now = new Date();
+      document.getElementById('returnDate').value = formatDate(now);
+      document.getElementById('returnTime').value = formatTime(now);
     
+      if (!document.getElementById('manualOutToggle').checked) {
+        document.getElementById('outDateManual').value = formatDate(now);
+        document.getElementById('outTimeManual').value = formatTime(now);
+      }
+    }
+
     function setupMainInterface() {
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
@@ -726,21 +739,7 @@
       if (document.hidden) setupWelcomeScreen();
     });
 
-   window.addEventListener('focus', function() {
-    if (!justUnlocked) {
-      setTimeout(function() {
-        if (!justUnlocked) {
-          setupWelcomeScreen();
-        }
-      }, 60 * 1000); // 1 min grace period
-    }
-  });
-  
-  window.addEventListener('pageshow', function() {
-    justUnlocked = false;
-  });
-
-    // Hide keyboard on Enter in Destination field
+       // Hide keyboard on Enter in Destination field
     document.getElementById('outDestination').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
