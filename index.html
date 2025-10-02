@@ -12,8 +12,6 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      transform: scale(0.90);
-      transform-origin: top center;
       font-family: Arial, sans-serif;
       background-color: #fdf1e9;
       color: #333;
@@ -341,9 +339,7 @@
     return pad2(h) + ":" + pad2(m) + " " + ampm;
     }
 
-  function isValidAmPm(t) {
-    return /^[0-1]?\d:[0-5]\d\s?(AM|PM)$/i.test(t);
-    }
+  
          
     // UI setup functions
     function setupWelcomeScreen() {
@@ -701,34 +697,34 @@
     // Uniform event bindings for all buttons using touchend
 
     // Logs Button
-    document.getElementById('btnLogs').addEventListener('touchend', function(e) {
+    document.getElementById('btnLogs').addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       showLogViewer();
     }, { passive: false });
     
     // Continue Button
-    document.getElementById('continueBtn').addEventListener('touchend', function(e) {
+    document.getElementById('continueBtn').addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       setupMainInterface();
     }, { passive: false });
     
     // Sign Out Button
-    document.getElementById('btnSignOut').addEventListener('touchend', function(e) {
+    document.getElementById('btnSignOut').addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       signOut();
     }, { passive: false });
     
     // Sign In Button
-    document.getElementById('btnSignIn').addEventListener('touchend', function(e) {
+    document.getElementById('btnSignIn').addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       signIn();
     }, { passive: false });
   
-    document.getElementById('btnBack').addEventListener('touchend', function(e) {
+    document.getElementById('btnBack').addEventListener('click', function(e) {
       e.preventDefault();
       setupMainInterface();
     }, { passive: false });
