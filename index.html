@@ -272,7 +272,7 @@
       // \s*                    optional space
       // (AM|PM)                AM or PM
       // \s*$                   optional trailing spaces
-      var re = /^\s*(1[0-2]|[1-9])[:\-\.]?([0-5]\d)\s*(AM|PM)\s*$/i;
+      var re = /^\s*(0?[1-9]|1[0-2])[:\-\.]?([0-5]\d)\s*(AM|PM)\s*$/i;
       return re.test(s);
     }
     
@@ -784,3 +784,4 @@
   </script>
 </body>
 </html>
+
