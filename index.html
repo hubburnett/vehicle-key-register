@@ -197,7 +197,8 @@
         </thead>
         <tbody></tbody>
       </table>
-      <button class="btn btn-export" id="btnResetLog">Reset from Gist</button>
+      <button class="btn btn-export" id="btnResetLog">Reset</button>
+      <button class="btn btn-export" id="btnRefreshLog">Refresh</button>
       <button class="btn btn-back" id="btnBack">Back</button>
     </div>
   </div> <!-- /.container -->
@@ -736,6 +737,14 @@
       }
     });
 
+    document.getElementById('btnRefreshLog').addEventListener('click', function(e) {
+      e.preventDefault();
+      updateReturnNames();
+      renderLogTable();
+      alert("✅ Refreshed sign-in list and log table.");
+    }, { passive: false });
+
+
   
     // Vehicle preview on select
     var vehicleImageMap = {
@@ -784,4 +793,5 @@
   </script>
 </body>
 </html>
+
 
