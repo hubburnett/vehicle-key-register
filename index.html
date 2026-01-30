@@ -110,17 +110,27 @@
       color: #555;
       line-height: 1.6;
     }
+    .name-field {
+      flex: 0.75;
+    }
+    .participant-field {
+      flex: 1.25;
+    }
     .participants-field {
+      width: 100%;
       flex-wrap: nowrap;
     }
     .participant-input {
       text-transform: uppercase;
       max-width: 80px;
+      flex: 1;
+      min-width: 0;
     }
     .participant-hint {
       margin-top: 8px;
-      font-size: 1rem;
-      color: #666;
+      font-size: 1.3rem;
+      color: #333;
+      line-height: 1.4;
     }
   </style>
 </head>
@@ -140,8 +150,8 @@
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
           <div class="form-group inline-flex">
-            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
-            <div style="flex:1;">
+            <div class="name-field"><label for="outName">Name</label><input type="text" id="outName"></div>
+            <div class="participant-field">
               <label for="outParticipant1" id="outParticipantLabel">Participant/s</label>
               <div class="inline-flex participants-field" id="participantFields">
                 <input type="text" id="outParticipant1" class="participant-input" maxlength="3" autocapitalize="characters">
@@ -463,10 +473,23 @@
       return nextInput;
     }
 
+    function removeTrailingEmptyParticipantInputs() {
+      var inputs = getParticipantInputs();
+      while (inputs.length > 1) {
+        var lastInput = inputs[inputs.length - 1];
+        if (normalizeParticipantValue(lastInput.value)) {
+          break;
+        }
+        lastInput.parentNode.removeChild(lastInput);
+        inputs = getParticipantInputs();
+      }
+    }
+
     function handleParticipantInput(e) {
       var value = e.target.value;
       if (value.indexOf(',') === -1) {
         e.target.value = normalizeParticipantValue(value);
+        removeTrailingEmptyParticipantInputs();
         return;
       }
 
@@ -481,12 +504,14 @@
           newInput.focus();
         }
       }
+      removeTrailingEmptyParticipantInputs();
     }
 
     function bindParticipantInput(input) {
       input.addEventListener('input', handleParticipantInput);
       input.addEventListener('blur', function(e) {
         e.target.value = normalizeParticipantValue(e.target.value);
+        removeTrailingEmptyParticipantInputs();
       });
     }
 
