@@ -110,6 +110,18 @@
       color: #555;
       line-height: 1.6;
     }
+    .participants-field {
+      flex-wrap: nowrap;
+    }
+    .participant-input {
+      text-transform: uppercase;
+      max-width: 80px;
+    }
+    .participant-hint {
+      margin-top: 8px;
+      font-size: 1rem;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -129,7 +141,13 @@
           <h3>Sign Out</h3>
           <div class="form-group inline-flex">
             <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
-            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters"></div>
+            <div style="flex:1;">
+              <label for="outParticipant1" id="outParticipantLabel">Participant/s</label>
+              <div class="inline-flex participants-field" id="participantFields">
+                <input type="text" id="outParticipant1" class="participant-input" maxlength="3" autocapitalize="characters">
+              </div>
+              <p class="participant-hint">Please only input participant initials for confidentiality.</p>
+            </div>
           </div>
           <div class="form-group">
             <label for="permitToggle" id="permitToggleLabel">
@@ -406,6 +424,72 @@
       return false;
     }
 
+    function normalizeParticipantValue(value) {
+      return value.trim().toUpperCase().slice(0, 3);
+    }
+
+    function getParticipantInputs() {
+      return document.querySelectorAll('.participant-input');
+    }
+
+    function getParticipantString() {
+      var inputs = getParticipantInputs();
+      var values = [];
+      for (var i = 0; i < inputs.length; i++) {
+        var cleaned = normalizeParticipantValue(inputs[i].value);
+        if (cleaned) {
+          values.push(cleaned);
+        }
+      }
+      return values.join(", ");
+    }
+
+    function addParticipantInput(initialValue) {
+      var container = document.getElementById('participantFields');
+      var inputs = getParticipantInputs();
+      if (inputs.length >= 4) {
+        return null;
+      }
+      var nextInput = document.createElement('input');
+      nextInput.type = 'text';
+      nextInput.className = 'participant-input';
+      nextInput.maxLength = 3;
+      nextInput.autocapitalize = 'characters';
+      container.appendChild(nextInput);
+      if (typeof initialValue === 'string') {
+        nextInput.value = normalizeParticipantValue(initialValue);
+      }
+      bindParticipantInput(nextInput);
+      return nextInput;
+    }
+
+    function handleParticipantInput(e) {
+      var value = e.target.value;
+      if (value.indexOf(',') === -1) {
+        e.target.value = normalizeParticipantValue(value);
+        return;
+      }
+
+      var parts = value.split(',');
+      var current = parts.shift();
+      e.target.value = normalizeParticipantValue(current);
+
+      while (parts.length && getParticipantInputs().length < 4) {
+        var nextPart = parts.shift();
+        var newInput = addParticipantInput(nextPart || "");
+        if (newInput && nextPart === "") {
+          newInput.focus();
+        }
+      }
+    }
+
+    function bindParticipantInput(input) {
+      input.addEventListener('input', handleParticipantInput);
+      input.addEventListener('blur', function(e) {
+        e.target.value = normalizeParticipantValue(e.target.value);
+      });
+    }
+
   
          
     // UI setup functions
@@ -435,7 +519,13 @@
     
       // Clear all the sign-out fields
       document.getElementById('outName').value         = "";
-      document.getElementById('outParticipant').value  = "";
+      var participantFields = document.querySelectorAll('.participant-input');
+      for (var i = 0; i < participantFields.length; i++) {
+        participantFields[i].value = "";
+        if (i > 0) {
+          participantFields[i].parentNode.removeChild(participantFields[i]);
+        }
+      }
       document.getElementById('outVehicle').value      = "";
       document.getElementById('outDestination').value  = "";      // ← clear Destination
       document.getElementById('permitToggle').checked = false;
@@ -460,21 +550,21 @@
   
     function signOut() {
       // ——— Clear any previous error highlights ———
-      ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
+      ['outName','outParticipant1','outDestination','outVehicle'].forEach(function(id){
         var lbl = document.querySelector('label[for="'+id+'"]');
         if (lbl) lbl.classList.remove('error');
       });
     
       // ——— Grab field values ———
       var name    = document.getElementById('outName').value.trim();
-      var part    = document.getElementById('outParticipant').value.trim().toUpperCase();
+      var part    = getParticipantString();
       var dest    = document.getElementById('outDestination').value.trim();
       var vehicle = document.getElementById('outVehicle').value;
     
       // ——— Check for missing fields ———
       var missing = [];
       if (!name)    missing.push('outName');
-      if (!part)    missing.push('outParticipant');
+      if (!part)    missing.push('outParticipant1');
       if (!dest)    missing.push('outDestination');
       if (!vehicle) missing.push('outVehicle');
     
@@ -540,7 +630,7 @@
       }
     
       // ——— Clear error highlights after success ———
-      ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
+      ['outName','outParticipant1','outDestination','outVehicle'].forEach(function(id){
         var lbl = document.querySelector('label[for="'+id+'"]');
         if (lbl) lbl.classList.remove('error');
       });
@@ -929,6 +1019,7 @@
   
     // Initialize
     setupWelcomeScreen();
+    bindParticipantInput(document.getElementById('outParticipant1'));
     resetInactivityTimer();  // Start the timer when the app loads
   </script>
 </body>
