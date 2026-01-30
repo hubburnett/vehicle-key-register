@@ -145,6 +145,7 @@
               <option>HiAce Bus - 656 GG4</option>
               <option>Outlander - 717 AM3</option>
               <option>Outlander - 402 LG5</option>
+              <option>Personal Vehicle</option>
             </select>
           </div>
           <button class="btn btn-sign-out" id="btnSignOut">Sign Out</button>
@@ -203,7 +204,7 @@
       <h2>Log Viewer</h2>
       <table id="logTable">
         <thead>
-          <tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Permit Out</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr>
+          <tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -305,12 +306,14 @@
     var vehicleList = [
       "HiAce Bus - 656 GG4",
       "Outlander - 717 AM3",
-      "Outlander - 402 LG5"
+      "Outlander - 402 LG5",
+      "Personal Vehicle"
     ];
     var vehicles = {
       "HiAce Bus - 656 GG4": [],
       "Outlander - 717 AM3": [],
-      "Outlander - 402 LG5": []
+      "Outlander - 402 LG5": [],
+      "Personal Vehicle": []
     };
     var keysOut = {};
     var logData = [];
@@ -345,19 +348,22 @@
     for (var i = 0; i < logData.length; i++) {
       var e = logData[i];
       if (e["Date In"] === "") {
-        vehicles[e.Vehicle].push(e.Name);
         if (!keysOut[e.Name]) {
           keysOut[e.Name] = [];
         }
-        var permitFlag = (e["Permit Out"] || "").toLowerCase() === "yes";
+        var hasPermit = (e["Permit Out"] || "").toLowerCase() === "yes";
+        var isPersonalPermit = e.Vehicle === "Personal Vehicle (Permit)";
+        var vehicleKey = isPersonalPermit ? "Personal Vehicle" : e.Vehicle;
+        vehicles[vehicleKey].push(e.Name);
         keysOut[e.Name].push({
           Participant: e.Participant,
-          Vehicle: e.Vehicle,
+          Vehicle: vehicleKey,
+          LogVehicle: isPersonalPermit ? "Personal Vehicle (Permit)" : e.Vehicle,
           DateOut: e["Date Out"],
           TimeOut: e["Time Out"],
-          PermitOut: permitFlag
+          PermitOut: hasPermit || isPersonalPermit
         });
-        if (permitFlag) {
+        if (hasPermit || isPersonalPermit) {
           permitOut = true;
         }
       }
@@ -482,7 +488,7 @@
       }
     
       if (!isKnownWorker(name)) {
-        alert("Unknown worker.");
+        alert("Unknown worker");
         return;
       }
     
@@ -492,12 +498,21 @@
       var tOut = formatTime(now);
     
       var permitChecked = permitToggle.checked;
+      var isPersonalVehicle = vehicle === "Personal Vehicle";
+      if (permitChecked && !isPersonalVehicle) {
+        alert("Disability permit can only be signed out with a personal vehicle.");
+        return;
+      }
       if (permitChecked && permitOut) {
         alert("Disability permit is already signed out.");
         return;
       }
 
       // ——— Record sign-out ———
+      var logVehicle = vehicle;
+      if (permitChecked && isPersonalVehicle) {
+        logVehicle = "Personal Vehicle (Permit)";
+      }
       vehicles[vehicle].push(name);
       if (!keysOut[name]) {
         keysOut[name] = [];
@@ -505,6 +520,7 @@
       keysOut[name].push({
         Participant: part,
         Vehicle: vehicle,
+        LogVehicle: logVehicle,
         DateOut: dOut,
         TimeOut: tOut,
         PermitOut: permitChecked
@@ -513,8 +529,7 @@
         Name: name,
         Participant: part,
         Destination: dest,
-        Vehicle: vehicle,
-        "Permit Out": permitChecked ? "Yes" : "No",
+        Vehicle: logVehicle,
         "Date Out": dOut,
         "Time Out": tOut,
         "Date In": "",
@@ -602,7 +617,7 @@
         var e = logData[i];
         if (
           e.Name === name &&
-          e.Vehicle === rec.Vehicle &&
+          e.Vehicle === (rec.LogVehicle || rec.Vehicle) &&
           e["Date Out"] === rec.DateOut &&
           e["Time Out"] === rec.TimeOut &&
           !e["Date In"]
@@ -620,7 +635,7 @@
     }
 
     function convertLogToCSV() {
-      var cols = ["Name","Participant","Destination","Vehicle","Permit Out","Date Out","Time Out","Date In","Time In"];
+      var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
       var rows = [cols.join(",")];
       for (var i = 0; i < logData.length; i++) {
         var entry = logData[i];
@@ -741,7 +756,7 @@
           var opt = document.createElement('option');
           var rec = options[i];
           opt.value = i;
-          opt.textContent = rec.Vehicle + " (Out: " + rec.DateOut + " " + rec.TimeOut + ")";
+          opt.textContent = (rec.LogVehicle || rec.Vehicle) + " (Out: " + rec.DateOut + " " + rec.TimeOut + ")";
           keySel.appendChild(opt);
         }
       } else {
@@ -768,7 +783,7 @@
 
       for (var i = 0; i < vehicleList.length; i++) {
         var vehicleName = vehicleList[i];
-        if (vehicles[vehicleName].length < 2) {
+        if (vehicleName === "Personal Vehicle" || vehicles[vehicleName].length < 2) {
           var opt = document.createElement('option');
           opt.value = vehicleName;
           opt.textContent = vehicleName;
@@ -788,7 +803,7 @@
     function renderLogTable() {
       var tbody = document.querySelector('#logTable tbody');
       tbody.innerHTML = '';
-      var cols = ["Name","Participant","Destination","Vehicle","Permit Out","Date Out","Time Out","Date In","Time In"];
+      var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
       if (logData.length === 0) {
         var tr = document.createElement('tr');
         var td = document.createElement('td');
