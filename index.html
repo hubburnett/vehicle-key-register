@@ -94,6 +94,9 @@
     label.error {
     color: red;
     }
+    .disabled {
+      color: #999;
+    }
     /* iOS 9 flex spacing helper */
     .inline-flex {
       display: flex;
@@ -128,10 +131,10 @@
             <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
             <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters"></div>
           </div>
-          <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label></div>
-          <div id="manualOutFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
-            <div><label>Date Out</label><input type="text" id="outDateManual"></div>
-            <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
+          <div class="form-group">
+            <label for="permitToggle" id="permitToggleLabel">
+              <input type="checkbox" id="permitToggle"> Disability Parking Permit
+            </label>
           </div>
           <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination"></div>
           <div class="form-group">
@@ -200,7 +203,7 @@
       <h2>Log Viewer</h2>
       <table id="logTable">
         <thead>
-          <tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr>
+          <tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Permit Out</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -299,6 +302,11 @@
     };
   
     // Data storage
+    var vehicleList = [
+      "HiAce Bus - 656 GG4",
+      "Outlander - 717 AM3",
+      "Outlander - 402 LG5"
+    ];
     var vehicles = {
       "HiAce Bus - 656 GG4": [],
       "Outlander - 717 AM3": [],
@@ -306,6 +314,27 @@
     };
     var keysOut = {};
     var logData = [];
+    var permitOut = false;
+
+    var workerAliases = [
+      ["Jesse"],
+      ["Ken"],
+      ["Jillian"],
+      ["Angela"],
+      ["Tahnee"],
+      ["Nardi"],
+      ["Kerri"],
+      ["Michael"],
+      ["Scott"],
+      ["Penny"],
+      ["Mikey"],
+      ["Trudy"],
+      ["Gayle"],
+      ["Tracey"],
+      ["Rianna"],
+      ["Daniel", "Danny"],
+      ["Trish", "Patricia"]
+    ];
   
     // Load existing log from localStorage
     var stored = localStorage.getItem('vehicleKeyLog');
@@ -320,12 +349,17 @@
         if (!keysOut[e.Name]) {
           keysOut[e.Name] = [];
         }
+        var permitFlag = (e["Permit Out"] || "").toLowerCase() === "yes";
         keysOut[e.Name].push({
           Participant: e.Participant,
           Vehicle: e.Vehicle,
           DateOut: e["Date Out"],
-          TimeOut: e["Time Out"]
+          TimeOut: e["Time Out"],
+          PermitOut: permitFlag
         });
+        if (permitFlag) {
+          permitOut = true;
+        }
       }
     }
   
@@ -350,6 +384,22 @@
     return pad2(h) + ":" + pad2(m) + " " + ampm;
     }
 
+    function normalizeName(name) {
+      return name.trim().toLowerCase();
+    }
+
+    function isKnownWorker(name) {
+      var normalized = normalizeName(name);
+      for (var i = 0; i < workerAliases.length; i++) {
+        for (var j = 0; j < workerAliases[i].length; j++) {
+          if (normalized === workerAliases[i][j].toLowerCase()) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
   
          
     // UI setup functions
@@ -370,11 +420,6 @@
       var now = new Date();
       document.getElementById('returnDate').value = formatDate(now);
       document.getElementById('returnTime').value = formatTime(now);
-    
-      if (!document.getElementById('manualOutToggle').checked) {
-        document.getElementById('outDateManual').value = formatDate(now);
-        document.getElementById('outTimeManual').value = formatTime(now);
-      }
     }
 
     function setupMainInterface() {
@@ -387,14 +432,15 @@
       document.getElementById('outParticipant').value  = "";
       document.getElementById('outVehicle').value      = "";
       document.getElementById('outDestination').value  = "";      // ← clear Destination
-      document.getElementById('manualOutToggle').checked = false; // ← un‐check manual toggle
-      manualFields.style.display = 'none';                       // ← hide manual date/time inputs
+      document.getElementById('permitToggle').checked = false;
     
       // Reset return inputs
       document.getElementById('returnDate').value = formatDate(new Date());
       document.getElementById('returnTime').value = formatTime(new Date());
       updateReturnNames();
       updateReturnKeyOptions("");
+      updatePermitToggle();
+      updateVehicleOptions();
     }
     function showLogViewer() {
       document.getElementById('mainInterface').style.display = 'none';
@@ -404,10 +450,7 @@
 
        
     // Sign-out logic
-    var toggle = document.getElementById('manualOutToggle');
-    var manualFields = document.getElementById('manualOutFields');
-    var outDateManual = document.getElementById('outDateManual');
-    var outTimeManual = document.getElementById('outTimeManual');
+    var permitToggle = document.getElementById('permitToggle');
   
     function signOut() {
       // ——— Clear any previous error highlights ———
@@ -438,9 +481,8 @@
         return;
       }
     
-      // ——— Check key availability ———
-      if (vehicles[vehicle].length >= 2) {
-        alert("All keys for " + vehicle + " are signed out.");
+      if (!isKnownWorker(name)) {
+        alert("Unknown worker.");
         return;
       }
     
@@ -449,26 +491,11 @@
       var dOut = formatDate(now);
       var tOut = formatTime(now);
     
-      // ——— If manual entry, validate date and time ———
-    if (toggle.checked) {
-      // 1) grab raw
-      var rawDate = outDateManual.value.trim();
-      var rawTime = outTimeManual.value.trim();
-    
-      // 2) validate
-      if (!isValidDate(rawDate)) {
-        alert("Please enter a valid date (e.g. DD/MM/YYYY).");
+      var permitChecked = permitToggle.checked;
+      if (permitChecked && permitOut) {
+        alert("Disability permit is already signed out.");
         return;
       }
-      if (!isValidAmPm(rawTime)) {
-        alert("Please enter time in HH:MM AM/PM format (e.g. 1:18 PM).");
-        return;
-      }
-    
-      // 3) normalize & assign
-      dOut = normalizeDate(rawDate);
-      tOut = normalizeTime(rawTime);
-    }
 
       // ——— Record sign-out ———
       vehicles[vehicle].push(name);
@@ -479,18 +506,23 @@
         Participant: part,
         Vehicle: vehicle,
         DateOut: dOut,
-        TimeOut: tOut
+        TimeOut: tOut,
+        PermitOut: permitChecked
       });
       logData.push({
         Name: name,
         Participant: part,
         Destination: dest,
         Vehicle: vehicle,
+        "Permit Out": permitChecked ? "Yes" : "No",
         "Date Out": dOut,
         "Time Out": tOut,
         "Date In": "",
         "Time In": ""
       });
+      if (permitChecked) {
+        permitOut = true;
+      }
     
       // ——— Clear error highlights after success ———
       ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
@@ -558,6 +590,10 @@
       if (availableKeys.length === 0) {
         delete keysOut[name];
       }
+
+      if (rec.PermitOut) {
+        permitOut = false;
+      }
     
       var idx = vehicles[rec.Vehicle].indexOf(name);
       if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
@@ -584,7 +620,7 @@
     }
 
     function convertLogToCSV() {
-      var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
+      var cols = ["Name","Participant","Destination","Vehicle","Permit Out","Date Out","Time Out","Date In","Time In"];
       var rows = [cols.join(",")];
       for (var i = 0; i < logData.length; i++) {
         var entry = logData[i];
@@ -665,6 +701,8 @@
             saveToLocal();
             updateReturnNames();
             updateReturnKeyOptions("");
+            updatePermitToggle();
+            updateVehicleOptions();
             renderLogTable();
             alert("✅ Log restored from Gist.");
           } else {
@@ -710,12 +748,47 @@
         keyGroup.style.display = 'none';
       }
     }
+
+    function updatePermitToggle() {
+      var label = document.getElementById('permitToggleLabel');
+      if (permitOut) {
+        permitToggle.checked = false;
+        permitToggle.disabled = true;
+        label.classList.add('disabled');
+      } else {
+        permitToggle.disabled = false;
+        label.classList.remove('disabled');
+      }
+    }
+
+    function updateVehicleOptions() {
+      var sel = document.getElementById('outVehicle');
+      var current = sel.value;
+      sel.innerHTML = '<option value="">-- Select Vehicle --</option>';
+
+      for (var i = 0; i < vehicleList.length; i++) {
+        var vehicleName = vehicleList[i];
+        if (vehicles[vehicleName].length < 2) {
+          var opt = document.createElement('option');
+          opt.value = vehicleName;
+          opt.textContent = vehicleName;
+          sel.appendChild(opt);
+        }
+      }
+
+      if (current && sel.querySelector('option[value="' + current + '"]')) {
+        sel.value = current;
+      } else {
+        sel.value = "";
+        document.getElementById('vehiclePreview').style.display = 'none';
+      }
+    }
   
     // Render the Log Viewer table
     function renderLogTable() {
       var tbody = document.querySelector('#logTable tbody');
       tbody.innerHTML = '';
-      var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
+      var cols = ["Name","Participant","Destination","Vehicle","Permit Out","Date Out","Time Out","Date In","Time In"];
       if (logData.length === 0) {
         var tr = document.createElement('tr');
         var td = document.createElement('td');
@@ -801,6 +874,8 @@
       e.preventDefault();
       updateReturnNames();
       updateReturnKeyOptions("");
+      updatePermitToggle();
+      updateVehicleOptions();
       renderLogTable();
       alert("✅ Refreshed sign-in list and log table.");
     }, { passive: false });
@@ -834,17 +909,6 @@
       if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
         this.blur();
-      }
-    });
-  
-    // Toggle manual date/time fields
-    toggle.addEventListener('change', function() {
-      if (toggle.checked) {
-        manualFields.style.display = 'flex';
-        outDateManual.value = formatDate(new Date());
-        outTimeManual.value  = formatTime(new Date());
-      } else {
-        manualFields.style.display = 'none';
       }
     });
   
