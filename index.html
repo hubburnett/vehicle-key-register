@@ -158,6 +158,13 @@
           <option value="">-- Select Name --</option>
         </select>
       </div>
+
+      <div class="form-group" id="inKeyGroup" style="display:none;">
+        <label for="inKey">Select Key to Return</label>
+        <select id="inKey">
+          <option value="">-- Select Key --</option>
+        </select>
+      </div>
     
       <!-- 2. Return Date + Time -->
       <div class="form-group inline-flex" style="flex-wrap:wrap;">
@@ -310,12 +317,15 @@
       var e = logData[i];
       if (e["Date In"] === "") {
         vehicles[e.Vehicle].push(e.Name);
-        keysOut[e.Name] = {
+        if (!keysOut[e.Name]) {
+          keysOut[e.Name] = [];
+        }
+        keysOut[e.Name].push({
           Participant: e.Participant,
           Vehicle: e.Vehicle,
           DateOut: e["Date Out"],
           TimeOut: e["Time Out"]
-        };
+        });
       }
     }
   
@@ -384,6 +394,7 @@
       document.getElementById('returnDate').value = formatDate(new Date());
       document.getElementById('returnTime').value = formatTime(new Date());
       updateReturnNames();
+      updateReturnKeyOptions("");
     }
     function showLogViewer() {
       document.getElementById('mainInterface').style.display = 'none';
@@ -461,12 +472,15 @@
 
       // ——— Record sign-out ———
       vehicles[vehicle].push(name);
-      keysOut[name] = {
+      if (!keysOut[name]) {
+        keysOut[name] = [];
+      }
+      keysOut[name].push({
         Participant: part,
         Vehicle: vehicle,
         DateOut: dOut,
         TimeOut: tOut
-      };
+      });
       logData.push({
         Name: name,
         Participant: part,
@@ -493,9 +507,11 @@
     // Sign-in logic
     function signIn() {
       var sel     = document.getElementById('inName');
+      var keySel  = document.getElementById('inKey');
       var name    = sel.value;
       var retDate = document.getElementById('returnDate').value.trim();
       var retTime = document.getElementById('returnTime').value.trim();
+      var availableKeys = keysOut[name] || [];
     
       // ① All fields required
       if (!name || !retDate || !retTime) {
@@ -525,17 +541,36 @@
         alert("This name does not have a key signed out.");
         return;
       }
-    
-      // ⑤ Perform the sign-in
-      var rec = keysOut[name];
-      delete keysOut[name];
+
+      // ⑤ Require key selection when multiple keys are out
+      var selectedKeyIndex = 0;
+      if (availableKeys.length > 1) {
+        if (!keySel.value) {
+          alert("Please select which key is being returned.");
+          return;
+        }
+        selectedKeyIndex = parseInt(keySel.value, 10);
+      }
+
+      // ⑥ Perform the sign-in
+      var rec = availableKeys[selectedKeyIndex];
+      availableKeys.splice(selectedKeyIndex, 1);
+      if (availableKeys.length === 0) {
+        delete keysOut[name];
+      }
     
       var idx = vehicles[rec.Vehicle].indexOf(name);
       if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
     
       for (var i = 0; i < logData.length; i++) {
         var e = logData[i];
-        if (e.Name === name && e.Vehicle === rec.Vehicle && !e["Date In"]) {
+        if (
+          e.Name === name &&
+          e.Vehicle === rec.Vehicle &&
+          e["Date Out"] === rec.DateOut &&
+          e["Time Out"] === rec.TimeOut &&
+          !e["Date In"]
+        ) {
           e["Date In"] = retDate;
           e["Time In"] = retTime;
           break;
@@ -629,6 +664,7 @@
     
             saveToLocal();
             updateReturnNames();
+            updateReturnKeyOptions("");
             renderLogTable();
             alert("✅ Log restored from Gist.");
           } else {
@@ -652,6 +688,26 @@
         o.value = n;
         o.textContent = n;
         sel.appendChild(o);
+      }
+    }
+
+    function updateReturnKeyOptions(name) {
+      var keyGroup = document.getElementById('inKeyGroup');
+      var keySel = document.getElementById('inKey');
+      var options = keysOut[name] || [];
+      keySel.innerHTML = '<option value="">-- Select Key --</option>';
+
+      if (options.length > 1) {
+        keyGroup.style.display = 'block';
+        for (var i = 0; i < options.length; i++) {
+          var opt = document.createElement('option');
+          var rec = options[i];
+          opt.value = i;
+          opt.textContent = rec.Vehicle + " (Out: " + rec.DateOut + " " + rec.TimeOut + ")";
+          keySel.appendChild(opt);
+        }
+      } else {
+        keyGroup.style.display = 'none';
       }
     }
   
@@ -724,6 +780,10 @@
       e.stopPropagation();
       signIn();
     }, { passive: false });
+
+    document.getElementById('inName').addEventListener('change', function(e) {
+      updateReturnKeyOptions(e.target.value);
+    }, { passive: true });
   
     document.getElementById('btnBack').addEventListener('click', function(e) {
       e.preventDefault();
@@ -740,6 +800,7 @@
     document.getElementById('btnRefreshLog').addEventListener('click', function(e) {
       e.preventDefault();
       updateReturnNames();
+      updateReturnKeyOptions("");
       renderLogTable();
       alert("✅ Refreshed sign-in list and log table.");
     }, { passive: false });
