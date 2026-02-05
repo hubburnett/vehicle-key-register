@@ -94,6 +94,9 @@
     label.error {
     color: red;
     }
+    .disabled {
+      color: #999;
+    }
     /* iOS 9 flex spacing helper */
     .inline-flex {
       display: flex;
@@ -103,6 +106,28 @@
     }
     .panel-description {
       margin: 12px 0 0px;
+      font-size: 1.3rem;
+      color: #555;
+      line-height: 1.6;
+    }
+    .name-field {
+      flex: 0.75;
+    }
+    .participant-field {
+      flex: 1.25;
+    }
+    .participants-field {
+      width: 100%;
+      flex-wrap: nowrap;
+      gap: 10px;
+    }
+    .participant-input {
+      text-transform: uppercase;
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .participant-hint {
+      margin-top: 8px;
       font-size: 1.3rem;
       color: #555;
       line-height: 1.6;
@@ -125,13 +150,19 @@
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
           <div class="form-group inline-flex">
-            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
-            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters"></div>
+            <div class="name-field"><label for="outName">Name</label><input type="text" id="outName"></div>
+            <div class="participant-field">
+              <label for="outParticipant1" id="outParticipantLabel">Participant/s</label>
+              <div class="inline-flex participants-field" id="participantFields">
+                <input type="text" id="outParticipant1" class="participant-input" maxlength="3" autocapitalize="characters">
+              </div>
+              <p class="participant-hint">Please only input participant initials for confidentiality.</p>
+            </div>
           </div>
-          <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label></div>
-          <div id="manualOutFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
-            <div><label>Date Out</label><input type="text" id="outDateManual"></div>
-            <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
+          <div class="form-group">
+            <label for="permitToggle" id="permitToggleLabel">
+              <input type="checkbox" id="permitToggle"> Disability Parking Permit
+            </label>
           </div>
           <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination"></div>
           <div class="form-group">
@@ -139,9 +170,6 @@
             <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; width:200px; height:auto; margin-bottom:10px;">
             <select id="outVehicle">
               <option value="">-- Select Vehicle --</option>
-              <option>HiAce Bus - 656 GG4</option>
-              <option>Outlander - 717 AM3</option>
-              <option>Outlander - 402 LG5</option>
             </select>
           </div>
           <button class="btn btn-sign-out" id="btnSignOut">Sign Out</button>
@@ -156,6 +184,13 @@
         <label for="inName">Select Name</label>
         <select id="inName">
           <option value="">-- Select Name --</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="inKeyGroup" style="display:none;">
+        <label for="inKey">Select Key to Return</label>
+        <select id="inKey">
+          <option value="">-- Select Key --</option>
         </select>
       </div>
     
@@ -292,13 +327,43 @@
     };
   
     // Data storage
+    var vehicleList = [
+      "HiAce Bus - 656 GG4",
+      "Outlander - 717 AM3",
+      "Outlander - 402 LG5",
+      "Meals on Wheels",
+      "Personal Vehicle"
+    ];
     var vehicles = {
       "HiAce Bus - 656 GG4": [],
       "Outlander - 717 AM3": [],
-      "Outlander - 402 LG5": []
+      "Outlander - 402 LG5": [],
+      "Meals on Wheels": [],
+      "Personal Vehicle": []
     };
     var keysOut = {};
     var logData = [];
+    var permitOut = false;
+
+    var workerAliases = [
+      ["Jesse"],
+      ["Ken"],
+      ["Jillian"],
+      ["Angela"],
+      ["Tahnee"],
+      ["Nardi"],
+      ["Kerri"],
+      ["Michael"],
+      ["Scott"],
+      ["Penny"],
+      ["Mikey"],
+      ["Trudy"],
+      ["Gayle"],
+      ["Tracey"],
+      ["Rianna"],
+      ["Daniel", "Danny"],
+      ["Trish", "Patricia"]
+    ];
   
     // Load existing log from localStorage
     var stored = localStorage.getItem('vehicleKeyLog');
@@ -309,13 +374,24 @@
     for (var i = 0; i < logData.length; i++) {
       var e = logData[i];
       if (e["Date In"] === "") {
-        vehicles[e.Vehicle].push(e.Name);
-        keysOut[e.Name] = {
+        if (!keysOut[e.Name]) {
+          keysOut[e.Name] = [];
+        }
+        var hasPermit = (e["Permit Out"] || "").toLowerCase() === "yes";
+        var isPersonalPermit = e.Vehicle === "Personal Vehicle (Permit)";
+        var vehicleKey = isPersonalPermit ? "Personal Vehicle" : e.Vehicle;
+        vehicles[vehicleKey].push(e.Name);
+        keysOut[e.Name].push({
           Participant: e.Participant,
-          Vehicle: e.Vehicle,
+          Vehicle: vehicleKey,
+          LogVehicle: isPersonalPermit ? "Personal Vehicle (Permit)" : e.Vehicle,
           DateOut: e["Date Out"],
-          TimeOut: e["Time Out"]
-        };
+          TimeOut: e["Time Out"],
+          PermitOut: hasPermit || isPersonalPermit
+        });
+        if (hasPermit || isPersonalPermit) {
+          permitOut = true;
+        }
       }
     }
   
@@ -340,6 +416,105 @@
     return pad2(h) + ":" + pad2(m) + " " + ampm;
     }
 
+    function normalizeName(name) {
+      return name.trim().toLowerCase();
+    }
+
+    function isKnownWorker(name) {
+      var normalized = normalizeName(name);
+      for (var i = 0; i < workerAliases.length; i++) {
+        for (var j = 0; j < workerAliases[i].length; j++) {
+          if (normalized === workerAliases[i][j].toLowerCase()) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function normalizeParticipantValue(value) {
+      return value.trim().toUpperCase().slice(0, 3);
+    }
+
+    function getParticipantInputs() {
+      return document.querySelectorAll('.participant-input');
+    }
+
+    function getParticipantString() {
+      var inputs = getParticipantInputs();
+      var values = [];
+      for (var i = 0; i < inputs.length; i++) {
+        var cleaned = normalizeParticipantValue(inputs[i].value);
+        if (cleaned) {
+          values.push(cleaned);
+        }
+      }
+      return values.join(", ");
+    }
+
+    function addParticipantInput(initialValue) {
+      var container = document.getElementById('participantFields');
+      var inputs = getParticipantInputs();
+      if (inputs.length >= 4) {
+        return null;
+      }
+      var nextInput = document.createElement('input');
+      nextInput.type = 'text';
+      nextInput.className = 'participant-input';
+      nextInput.maxLength = 3;
+      nextInput.autocapitalize = 'characters';
+      container.appendChild(nextInput);
+      if (typeof initialValue === 'string') {
+        nextInput.value = normalizeParticipantValue(initialValue);
+      }
+      bindParticipantInput(nextInput);
+      return nextInput;
+    }
+
+    function removeTrailingEmptyParticipantInputs() {
+      var inputs = getParticipantInputs();
+      while (inputs.length > 1) {
+        var lastInput = inputs[inputs.length - 1];
+        if (document.activeElement === lastInput) {
+          break;
+        }
+        if (normalizeParticipantValue(lastInput.value)) {
+          break;
+        }
+        lastInput.parentNode.removeChild(lastInput);
+        inputs = getParticipantInputs();
+      }
+    }
+
+    function handleParticipantInput(e) {
+      var value = e.target.value;
+      if (value.indexOf(',') === -1) {
+        e.target.value = normalizeParticipantValue(value);
+        removeTrailingEmptyParticipantInputs();
+        return;
+      }
+
+      var parts = value.split(',');
+      var current = parts.shift();
+      e.target.value = normalizeParticipantValue(current);
+
+      while (parts.length && getParticipantInputs().length < 4) {
+        var nextPart = parts.shift();
+        var newInput = addParticipantInput(nextPart || "");
+        if (newInput && nextPart === "") {
+          newInput.focus();
+        }
+      }
+    }
+
+    function bindParticipantInput(input) {
+      input.addEventListener('input', handleParticipantInput);
+      input.addEventListener('blur', function(e) {
+        e.target.value = normalizeParticipantValue(e.target.value);
+        removeTrailingEmptyParticipantInputs();
+      });
+    }
+
   
          
     // UI setup functions
@@ -360,11 +535,6 @@
       var now = new Date();
       document.getElementById('returnDate').value = formatDate(now);
       document.getElementById('returnTime').value = formatTime(now);
-    
-      if (!document.getElementById('manualOutToggle').checked) {
-        document.getElementById('outDateManual').value = formatDate(now);
-        document.getElementById('outTimeManual').value = formatTime(now);
-      }
     }
 
     function setupMainInterface() {
@@ -374,16 +544,24 @@
     
       // Clear all the sign-out fields
       document.getElementById('outName').value         = "";
-      document.getElementById('outParticipant').value  = "";
+      var participantFields = document.querySelectorAll('.participant-input');
+      for (var i = 0; i < participantFields.length; i++) {
+        participantFields[i].value = "";
+        if (i > 0) {
+          participantFields[i].parentNode.removeChild(participantFields[i]);
+        }
+      }
       document.getElementById('outVehicle').value      = "";
       document.getElementById('outDestination').value  = "";      // ← clear Destination
-      document.getElementById('manualOutToggle').checked = false; // ← un‐check manual toggle
-      manualFields.style.display = 'none';                       // ← hide manual date/time inputs
+      document.getElementById('permitToggle').checked = false;
     
       // Reset return inputs
       document.getElementById('returnDate').value = formatDate(new Date());
       document.getElementById('returnTime').value = formatTime(new Date());
       updateReturnNames();
+      updateReturnKeyOptions("");
+      updatePermitToggle();
+      updateVehicleOptions();
     }
     function showLogViewer() {
       document.getElementById('mainInterface').style.display = 'none';
@@ -393,28 +571,25 @@
 
        
     // Sign-out logic
-    var toggle = document.getElementById('manualOutToggle');
-    var manualFields = document.getElementById('manualOutFields');
-    var outDateManual = document.getElementById('outDateManual');
-    var outTimeManual = document.getElementById('outTimeManual');
+    var permitToggle = document.getElementById('permitToggle');
   
     function signOut() {
       // ——— Clear any previous error highlights ———
-      ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
+      ['outName','outParticipant1','outDestination','outVehicle'].forEach(function(id){
         var lbl = document.querySelector('label[for="'+id+'"]');
         if (lbl) lbl.classList.remove('error');
       });
     
       // ——— Grab field values ———
       var name    = document.getElementById('outName').value.trim();
-      var part    = document.getElementById('outParticipant').value.trim().toUpperCase();
+      var part    = getParticipantString();
       var dest    = document.getElementById('outDestination').value.trim();
       var vehicle = document.getElementById('outVehicle').value;
     
       // ——— Check for missing fields ———
       var missing = [];
       if (!name)    missing.push('outName');
-      if (!part)    missing.push('outParticipant');
+      if (!part)    missing.push('outParticipant1');
       if (!dest)    missing.push('outDestination');
       if (!vehicle) missing.push('outVehicle');
     
@@ -427,9 +602,8 @@
         return;
       }
     
-      // ——— Check key availability ———
-      if (vehicles[vehicle].length >= 2) {
-        alert("All keys for " + vehicle + " are signed out.");
+      if (!isKnownWorker(name)) {
+        alert("Unknown worker");
         return;
       }
     
@@ -438,48 +612,50 @@
       var dOut = formatDate(now);
       var tOut = formatTime(now);
     
-      // ——— If manual entry, validate date and time ———
-    if (toggle.checked) {
-      // 1) grab raw
-      var rawDate = outDateManual.value.trim();
-      var rawTime = outTimeManual.value.trim();
-    
-      // 2) validate
-      if (!isValidDate(rawDate)) {
-        alert("Please enter a valid date (e.g. DD/MM/YYYY).");
+      var permitChecked = permitToggle.checked;
+      var isPersonalVehicle = vehicle === "Personal Vehicle";
+      if (permitChecked && !isPersonalVehicle) {
+        alert("Disability permit can only be signed out with a personal vehicle.");
         return;
       }
-      if (!isValidAmPm(rawTime)) {
-        alert("Please enter time in HH:MM AM/PM format (e.g. 1:18 PM).");
+      if (permitChecked && permitOut) {
+        alert("Disability permit is already signed out.");
         return;
       }
-    
-      // 3) normalize & assign
-      dOut = normalizeDate(rawDate);
-      tOut = normalizeTime(rawTime);
-    }
 
       // ——— Record sign-out ———
+      var logVehicle = vehicle;
+      if (permitChecked && isPersonalVehicle) {
+        logVehicle = "Personal Vehicle (Permit)";
+      }
       vehicles[vehicle].push(name);
-      keysOut[name] = {
+      if (!keysOut[name]) {
+        keysOut[name] = [];
+      }
+      keysOut[name].push({
         Participant: part,
         Vehicle: vehicle,
+        LogVehicle: logVehicle,
         DateOut: dOut,
-        TimeOut: tOut
-      };
+        TimeOut: tOut,
+        PermitOut: permitChecked
+      });
       logData.push({
         Name: name,
         Participant: part,
         Destination: dest,
-        Vehicle: vehicle,
+        Vehicle: logVehicle,
         "Date Out": dOut,
         "Time Out": tOut,
         "Date In": "",
         "Time In": ""
       });
+      if (permitChecked) {
+        permitOut = true;
+      }
     
       // ——— Clear error highlights after success ———
-      ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
+      ['outName','outParticipant1','outDestination','outVehicle'].forEach(function(id){
         var lbl = document.querySelector('label[for="'+id+'"]');
         if (lbl) lbl.classList.remove('error');
       });
@@ -493,9 +669,11 @@
     // Sign-in logic
     function signIn() {
       var sel     = document.getElementById('inName');
+      var keySel  = document.getElementById('inKey');
       var name    = sel.value;
       var retDate = document.getElementById('returnDate').value.trim();
       var retTime = document.getElementById('returnTime').value.trim();
+      var availableKeys = keysOut[name] || [];
     
       // ① All fields required
       if (!name || !retDate || !retTime) {
@@ -525,17 +703,40 @@
         alert("This name does not have a key signed out.");
         return;
       }
-    
-      // ⑤ Perform the sign-in
-      var rec = keysOut[name];
-      delete keysOut[name];
+
+      // ⑤ Require key selection when multiple keys are out
+      var selectedKeyIndex = 0;
+      if (availableKeys.length > 1) {
+        if (!keySel.value) {
+          alert("Please select which key is being returned.");
+          return;
+        }
+        selectedKeyIndex = parseInt(keySel.value, 10);
+      }
+
+      // ⑥ Perform the sign-in
+      var rec = availableKeys[selectedKeyIndex];
+      availableKeys.splice(selectedKeyIndex, 1);
+      if (availableKeys.length === 0) {
+        delete keysOut[name];
+      }
+
+      if (rec.PermitOut) {
+        permitOut = false;
+      }
     
       var idx = vehicles[rec.Vehicle].indexOf(name);
       if (idx > -1) vehicles[rec.Vehicle].splice(idx, 1);
     
       for (var i = 0; i < logData.length; i++) {
         var e = logData[i];
-        if (e.Name === name && e.Vehicle === rec.Vehicle && !e["Date In"]) {
+        if (
+          e.Name === name &&
+          e.Vehicle === (rec.LogVehicle || rec.Vehicle) &&
+          e["Date Out"] === rec.DateOut &&
+          e["Time Out"] === rec.TimeOut &&
+          !e["Date In"]
+        ) {
           e["Date In"] = retDate;
           e["Time In"] = retTime;
           break;
@@ -629,6 +830,9 @@
     
             saveToLocal();
             updateReturnNames();
+            updateReturnKeyOptions("");
+            updatePermitToggle();
+            updateVehicleOptions();
             renderLogTable();
             alert("✅ Log restored from Gist.");
           } else {
@@ -652,6 +856,62 @@
         o.value = n;
         o.textContent = n;
         sel.appendChild(o);
+      }
+    }
+
+    function updateReturnKeyOptions(name) {
+      var keyGroup = document.getElementById('inKeyGroup');
+      var keySel = document.getElementById('inKey');
+      var options = keysOut[name] || [];
+      keySel.innerHTML = '<option value="">-- Select Key --</option>';
+
+      if (options.length > 1) {
+        keyGroup.style.display = 'block';
+        for (var i = 0; i < options.length; i++) {
+          var opt = document.createElement('option');
+          var rec = options[i];
+          opt.value = i;
+          opt.textContent = (rec.LogVehicle || rec.Vehicle) + " (Out: " + rec.DateOut + " " + rec.TimeOut + ")";
+          keySel.appendChild(opt);
+        }
+      } else {
+        keyGroup.style.display = 'none';
+      }
+    }
+
+    function updatePermitToggle() {
+      var label = document.getElementById('permitToggleLabel');
+      if (permitOut) {
+        permitToggle.checked = false;
+        permitToggle.disabled = true;
+        label.classList.add('disabled');
+      } else {
+        permitToggle.disabled = false;
+        label.classList.remove('disabled');
+      }
+    }
+
+    function updateVehicleOptions() {
+      var sel = document.getElementById('outVehicle');
+      var current = sel.value;
+      sel.innerHTML = '<option value="">-- Select Vehicle --</option>';
+
+      for (var i = 0; i < vehicleList.length; i++) {
+        var vehicleName = vehicleList[i];
+        var allowPersonal = vehicleName === "Personal Vehicle" && permitToggle.checked;
+        if (allowPersonal || (vehicleName !== "Personal Vehicle" && vehicles[vehicleName].length < 2)) {
+          var opt = document.createElement('option');
+          opt.value = vehicleName;
+          opt.textContent = vehicleName;
+          sel.appendChild(opt);
+        }
+      }
+
+      if (current && sel.querySelector('option[value="' + current + '"]')) {
+        sel.value = current;
+      } else {
+        sel.value = "";
+        document.getElementById('vehiclePreview').style.display = 'none';
       }
     }
   
@@ -717,6 +977,10 @@
       e.stopPropagation();
       signOut();
     }, { passive: false });
+
+    permitToggle.addEventListener('change', function() {
+      updateVehicleOptions();
+    });
     
     // Sign In Button
     document.getElementById('btnSignIn').addEventListener('click', function(e) {
@@ -724,6 +988,10 @@
       e.stopPropagation();
       signIn();
     }, { passive: false });
+
+    document.getElementById('inName').addEventListener('change', function(e) {
+      updateReturnKeyOptions(e.target.value);
+    }, { passive: true });
   
     document.getElementById('btnBack').addEventListener('click', function(e) {
       e.preventDefault();
@@ -740,6 +1008,9 @@
     document.getElementById('btnRefreshLog').addEventListener('click', function(e) {
       e.preventDefault();
       updateReturnNames();
+      updateReturnKeyOptions("");
+      updatePermitToggle();
+      updateVehicleOptions();
       renderLogTable();
       alert("✅ Refreshed sign-in list and log table.");
     }, { passive: false });
@@ -776,19 +1047,9 @@
       }
     });
   
-    // Toggle manual date/time fields
-    toggle.addEventListener('change', function() {
-      if (toggle.checked) {
-        manualFields.style.display = 'flex';
-        outDateManual.value = formatDate(new Date());
-        outTimeManual.value  = formatTime(new Date());
-      } else {
-        manualFields.style.display = 'none';
-      }
-    });
-  
     // Initialize
     setupWelcomeScreen();
+    bindParticipantInput(document.getElementById('outParticipant1'));
     resetInactivityTimer();  // Start the timer when the app loads
   </script>
 </body>
