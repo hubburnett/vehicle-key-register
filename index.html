@@ -159,7 +159,7 @@
               <div class="participant-field">
                 <label for="outParticipant1" id="outParticipantLabel">Participant/s</label>
                 <div class="inline-flex participants-field" id="participantFields">
-                  <input type="text" id="outParticipant1" class="participant-input" maxlength="3" autocapitalize="characters">
+                  <input type="text" id="outParticipant1" class="participant-input" autocapitalize="characters">
                 </div>
               </div>
             </div>
@@ -177,6 +177,7 @@
             <select id="outVehicle">
               <option value="">-- Select Vehicle --</option>
               <option>HiAce Bus - 656 GG4</option>
+              <option>Meals on Wheels</option>
               <option>Outlander - 717 AM3</option>
               <option>Outlander - 402 LG5</option>
               <option>Personal Vehicle</option>
@@ -339,12 +340,14 @@
     // Data storage
     var vehicleList = [
       "HiAce Bus - 656 GG4",
+      "Meals on Wheels",
       "Outlander - 717 AM3",
       "Outlander - 402 LG5",
       "Personal Vehicle"
     ];
     var vehicles = {
       "HiAce Bus - 656 GG4": [],
+      "Meals on Wheels": [],
       "Outlander - 717 AM3": [],
       "Outlander - 402 LG5": [],
       "Personal Vehicle": []
@@ -469,7 +472,6 @@
       var nextInput = document.createElement('input');
       nextInput.type = 'text';
       nextInput.className = 'participant-input';
-      nextInput.maxLength = 3;
       nextInput.autocapitalize = 'characters';
       container.appendChild(nextInput);
       if (typeof initialValue === 'string') {
@@ -918,9 +920,17 @@
       var current = sel.value;
       sel.innerHTML = '<option value="">-- Select Vehicle --</option>';
 
+      var permitChecked = permitToggle.checked;
       for (var i = 0; i < vehicleList.length; i++) {
         var vehicleName = vehicleList[i];
-        if (vehicleName === "Personal Vehicle" || vehicles[vehicleName].length < 2) {
+        var isPersonal = vehicleName === "Personal Vehicle";
+        if (permitChecked && !isPersonal) {
+          continue;
+        }
+        if (!permitChecked && isPersonal) {
+          continue;
+        }
+        if (vehicles[vehicleName].length < 2) {
           var opt = document.createElement('option');
           opt.value = vehicleName;
           opt.textContent = vehicleName;
@@ -1031,6 +1041,10 @@
       renderLogTable();
       alert("✅ Refreshed sign-in list and log table.");
     }, { passive: false });
+  
+    permitToggle.addEventListener('change', function() {
+      updateVehicleOptions();
+    }, { passive: true });
 
 
   
@@ -1064,44 +1078,6 @@
       }
     });
   
-
-    // Disability Parking Permit -> vehicle options filter
-    (function() {
-      var permit = document.getElementById('permitToggle');
-      var vehicleSelect = document.getElementById('outVehicle');
-      if (!permit || !vehicleSelect) return;
-
-      // capture original options (excluding placeholder)
-      var originalOptions = Array.from(vehicleSelect.options).map(function(o) {
-        return { value: o.value, text: o.text };
-      });
-
-      function setOptions(options) {
-        vehicleSelect.innerHTML = '';
-        options.forEach(function(opt) {
-          var o = document.createElement('option');
-          o.value = opt.value;
-          o.text = opt.text;
-          vehicleSelect.appendChild(o);
-        });
-      }
-
-      function applyVehicleFilter() {
-        if (permit.checked) {
-          setOptions([
-            { value: '', text: '-- Select Vehicle --' },
-            { value: 'Personal Vehicle', text: 'Personal Vehicle' }
-          ]);
-        } else {
-          // restore full list exactly as it was
-          setOptions(originalOptions);
-        }
-      }
-
-      permit.addEventListener('change', applyVehicleFilter);
-      applyVehicleFilter(); // initial
-    })();
-
 
     // Initialize
     setupWelcomeScreen();
