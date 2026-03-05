@@ -11,6 +11,9 @@
   
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
+      // Ignore cross-origin ghost errors from Firebase that don't actually crash the app
+      if (message === "Script error." && lineno == 0) return true;
+      
       alert("JS Error: " + message + " at line " + lineno);
       return true; 
     };
@@ -60,13 +63,15 @@
     .btn:disabled { background-color: #999; cursor: not-allowed; }
     .btn-sign-out { background-color: #d9534f; }
     .btn-sign-in  { background-color: #5cb85c; }
+    
+    /* Logs button specifics to prevent highlighting text */
     .btn-logs { 
       background-color: #6c757d; 
-      /* Disable iOS text highlighting and context menus */
       -webkit-touch-callout: none; 
       -webkit-user-select: none; 
       user-select: none; 
     }
+    
     #logViewer { display: none; }
     #logViewer h2 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
     #logViewer table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -86,16 +91,14 @@
     .inline-flex > * + * { margin-left: 10px; }
     .panel-description { margin: 12px 0 0px; font-size: 1.1rem; color: #555; line-height: 1.4; }
     
-    /* Auto-capitalize Name Input */
     #outName { text-transform: capitalize; }
 
-    /* Participant Dynamic Fields */
     #participantContainer { display: flex; width: 100%; }
     .participant-input { flex: 1; min-width: 0; text-align: center; }
     .participant-input + .participant-input { margin-left: 10px; }
     .greyed-out { background-color: #e9ecef !important; color: #6c757d !important; }
 
-    /* Custom Alert Modal Styles for iOS 9 */
+    /* Unified Custom Modal System */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.6); z-index: 1000;
@@ -107,8 +110,8 @@
     }
     .modal-box p { font-size: 1.4rem; margin-bottom: 25px; line-height: 1.5; }
     .modal-box button {
-      padding: 15px 30px; font-size: 1.3rem; background: #007bff; color: #fff;
-      border: none; border-radius: 5px; cursor: pointer; width: 100%;
+      flex: 1; padding: 15px; font-size: 1.3rem; color: #fff;
+      border: none; border-radius: 5px; cursor: pointer;
     }
   </style>
 </head>
@@ -146,11 +149,11 @@
             <div id="destDropdownContainer" style="display:flex;">
               <select id="quickDest" style="flex:1; padding: 16px; font-size: 1.4rem; border: 1px solid #ccc; border-radius: 4px;">
                 <option value="">-- Quick Select --</option>
-                <option value="Local">Local</option>
                 <option value="Murgon">Murgon</option>
                 <option value="Wondai">Wondai</option>
                 <option value="Kingaroy">Kingaroy</option>
-                <option value="Cherbourg">Cherbourg</option>                
+                <option value="Cherbourg">Cherbourg</option>
+                <option value="Local">Local</option>
                 <option value="Gympie">Gympie</option>
                 <option value="Hivesville">Hivesville</option>
                 <option value="Other">Other...</option>
@@ -220,10 +223,14 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="customAlertOverlay">
+  <div class="modal-overlay" id="customModalOverlay">
     <div class="modal-box">
-      <p id="customAlertText"></p>
-      <button id="customAlertBtn">OK</button>
+      <p id="customModalText"></p>
+      <input type="password" id="customModalInput" style="display:none; width:100%; margin-bottom:20px; padding:15px; font-size:1.4rem; text-align:center; border:1px solid #ccc; border-radius:4px;" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Enter PIN">
+      <div style="display:flex; justify-content:space-between; gap:10px;">
+        <button id="customModalBtnCancel" style="display:none; background:#6c757d;">Cancel</button>
+        <button id="customModalBtnOK" style="background:#007bff;">OK</button>
+      </div>
     </div>
   </div>
 
@@ -251,6 +258,7 @@
     var inactivityTimer;
     var isAdminMode = false;
     var adminPressTimer;
+    var isTouchingLogs = false; // Tracks if finger is still down
     var vehicles = {};
     var keysOut = {}; 
     var logData = [];
@@ -262,13 +270,72 @@
       "Personal Vehicle": "personal_vehicle.jpg"
     };
 
-    // --- 3. CUSTOM ALERT ---
-    function showCustomAlert(msg) {
-      document.getElementById('customAlertText').innerText = msg;
-      document.getElementById('customAlertOverlay').style.display = 'block';
+    // --- 3. CUSTOM MODAL SYSTEM ---
+    var modalOverlay = document.getElementById('customModalOverlay');
+    var modalText = document.getElementById('customModalText');
+    var modalInput = document.getElementById('customModalInput');
+    var btnModalCancel = document.getElementById('customModalBtnCancel');
+    var btnModalOK = document.getElementById('customModalBtnOK');
+
+    function resetModal() {
+      modalInput.style.display = 'none';
+      modalInput.value = '';
+      btnModalCancel.style.display = 'none';
+      btnModalOK.innerText = 'OK';
+      btnModalOK.style.background = '#007bff';
+      btnModalOK.onclick = null;
+      btnModalCancel.onclick = null;
     }
-    document.getElementById('customAlertBtn').onclick = function() {
-      document.getElementById('customAlertOverlay').style.display = 'none';
+
+    function closeCustomModal() {
+      modalOverlay.style.display = 'none';
+      resetModal();
+    }
+
+    window.showCustomAlert = function(msg, callback) {
+      resetModal();
+      modalText.innerText = msg;
+      modalOverlay.style.display = 'block';
+      btnModalOK.onclick = function() {
+        closeCustomModal();
+        if (callback) callback();
+      };
+    };
+
+    window.showCustomConfirm = function(msg, callback) {
+      resetModal();
+      modalText.innerText = msg;
+      btnModalCancel.style.display = 'block';
+      btnModalOK.innerText = 'Delete';
+      btnModalOK.style.background = '#d9534f';
+      modalOverlay.style.display = 'block';
+      
+      btnModalCancel.onclick = function() {
+        closeCustomModal();
+        if (callback) callback(false);
+      };
+      btnModalOK.onclick = function() {
+        closeCustomModal();
+        if (callback) callback(true);
+      };
+    };
+
+    window.showCustomPrompt = function(msg, callback) {
+      resetModal();
+      modalText.innerText = msg;
+      modalInput.style.display = 'block';
+      btnModalCancel.style.display = 'block';
+      modalOverlay.style.display = 'block';
+      
+      btnModalCancel.onclick = function() {
+        closeCustomModal();
+        if (callback) callback(null);
+      };
+      btnModalOK.onclick = function() {
+        var val = modalInput.value;
+        closeCustomModal();
+        if (callback) callback(val);
+      };
     };
 
     // --- 4. HELPER FUNCTIONS ---
@@ -384,7 +451,7 @@
       document.getElementById('welcomeScreen').style.display = 'block';
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
-      document.getElementById('customAlertOverlay').style.display = 'none';
+      closeCustomModal(); // Force close any open modals
     }
 
     function setupMainInterface() {
@@ -428,7 +495,6 @@
       input.oninput = function() {
         var val = this.value.toUpperCase();
 
-        // Handle Comma Split
         var commaIdx = val.indexOf(',');
         if (commaIdx !== -1) {
            var beforeComma = val.substring(0, commaIdx);
@@ -452,7 +518,6 @@
            }
         }
 
-        // Allow 'N/A' sequence
         if (val === 'N' || val === 'N/' || val === 'N/A') {
            this.value = val;
            if (val === 'N/A') this.classList.add('greyed-out');
@@ -464,7 +529,6 @@
       };
 
       input.onblur = function() {
-         // Auto cleanup if left empty
          var container = document.getElementById('participantContainer');
          if (container.children.length > 1 && this.value.trim() === '') {
              container.removeChild(this);
@@ -505,7 +569,6 @@
         dest = document.getElementById('outDestinationText').value.trim();
       }
 
-      // Gather participant initials / NA
       var pInputs = document.getElementById('participantContainer').getElementsByTagName('input');
       var partArray = [];
       for(var i=0; i<pInputs.length; i++) {
@@ -565,14 +628,16 @@
       btn.innerText = "Processing...";
 
       db.collection("keyLogs").add(logEntry).then(function() {
-        showCustomAlert("Success! Key signed out.");
-        btn.disabled = false;
-        btn.innerText = "Sign Out";
-        setupMainInterface();
+        showCustomAlert("Success! Key signed out.", function() {
+          btn.disabled = false;
+          btn.innerText = "Sign Out";
+          setupMainInterface();
+        });
       }).catch(function(error) {
-        showCustomAlert("Error signing out: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Sign Out";
+        showCustomAlert("Error signing out: " + error.message, function() {
+          btn.disabled = false;
+          btn.innerText = "Sign Out";
+        });
       });
     });
 
@@ -609,14 +674,16 @@
         "Date In": formatDate(now),
         "Time In": formatTime(now)
       }).then(function() {
-        showCustomAlert("Success! Key signed back in.");
-        btn.disabled = false;
-        btn.innerText = "Sign In";
-        setupMainInterface();
+        showCustomAlert("Success! Key signed back in.", function() {
+          btn.disabled = false;
+          btn.innerText = "Sign In";
+          setupMainInterface();
+        });
       }).catch(function(error) {
-        showCustomAlert("Error signing in: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Sign In";
+        showCustomAlert("Error signing in: " + error.message, function() {
+          btn.disabled = false;
+          btn.innerText = "Sign In";
+        });
       });
     });
 
@@ -649,16 +716,18 @@
     }
 
     window.deleteLog = function(docId) {
-      if (confirm("Are you sure you want to permanently delete this log entry?")) {
-        db.collection("keyLogs").doc(docId).delete().then(function() {
-          showCustomAlert("Log deleted successfully.");
-          if (document.getElementById('btnClearSearch').style.display === 'inline-block') {
-             document.getElementById('btnSearchLogs').click();
-          }
-        }).catch(function(error) {
-          showCustomAlert("Error deleting: " + error.message);
-        });
-      }
+      showCustomConfirm("Are you sure you want to permanently delete this log entry?", function(confirmed) {
+        if (confirmed) {
+          db.collection("keyLogs").doc(docId).delete().then(function() {
+            showCustomAlert("Log deleted successfully.");
+            if (document.getElementById('btnClearSearch').style.display === 'inline-block') {
+               document.getElementById('btnSearchLogs').click();
+            }
+          }).catch(function(error) {
+            showCustomAlert("Error deleting: " + error.message);
+          });
+        }
+      });
     };
 
     // --- 11. EVENT LISTENERS ---
@@ -670,41 +739,54 @@
       document.addEventListener(evt, resetInactivityTimer);
     });
 
-    // Admin Long Press Logic (Logs Button)
-    // Admin Long Press Logic (Logs Button)
+    // Robust Admin Long Press Logic
     var btnLogs = document.getElementById('btnLogs');
-    
-    // Disable right-click context menu entirely for this button
     btnLogs.oncontextmenu = function(e) { e.preventDefault(); };
 
     btnLogs.addEventListener('touchstart', function(e) {
+      clearTimeout(adminPressTimer); // Kill any existing ghost timers first
+      isTouchingLogs = true;
+      
       adminPressTimer = setTimeout(function() {
-        var pin = window.prompt("Enter Admin PIN:");
-        if (pin === "1405") {
-          isAdminMode = true;
-          showCustomAlert("Admin Mode Enabled. You can now delete logs.");
-          showLogViewer();
-        } else if (pin) {
-          showCustomAlert("Incorrect PIN.");
-        }
-      }, 2000); // Reduced to 2 seconds for a better feel
+        if (!isTouchingLogs) return; // Double check if finger is still actually down
+        isTouchingLogs = false; // Reset state
+        
+        showCustomPrompt("Enter Admin PIN:", function(pin) {
+          if (pin === "1405") {
+            isAdminMode = true;
+            showCustomAlert("Admin Mode Enabled. You can now delete logs.", function() {
+              showLogViewer();
+            });
+          } else if (pin !== null) { // null means Cancel was pressed
+            showCustomAlert("Incorrect PIN.");
+          }
+        });
+      }, 1500); // 1.5 seconds is perfect for touch screens
     });
 
+    // Cancel timer if finger moves or lifts
     btnLogs.addEventListener('touchmove', function(e) {
-      // Cancel the timer if the user wiggles their finger or scrolls
+      isTouchingLogs = false;
       clearTimeout(adminPressTimer);
     });
-
     btnLogs.addEventListener('touchend', function(e) {
+      isTouchingLogs = false;
+      clearTimeout(adminPressTimer);
+    });
+    btnLogs.addEventListener('touchcancel', function(e) {
+      isTouchingLogs = false;
       clearTimeout(adminPressTimer);
     });
     
+    // Standard click (if not intercepted by long press)
     btnLogs.addEventListener('click', function(e) {
+      isTouchingLogs = false;
       clearTimeout(adminPressTimer);
-      if (!isAdminMode) showLogViewer();
+      if (!isAdminMode && document.getElementById('customModalOverlay').style.display !== 'block') {
+        showLogViewer();
+      }
     });
 
-    
     // Log Date Filtering
     document.getElementById('btnSearchLogs').addEventListener('click', function() {
       var sDate = normalizeDate(document.getElementById('searchDate').value.trim());
