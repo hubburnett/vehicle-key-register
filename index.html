@@ -60,7 +60,13 @@
     .btn:disabled { background-color: #999; cursor: not-allowed; }
     .btn-sign-out { background-color: #d9534f; }
     .btn-sign-in  { background-color: #5cb85c; }
-    .btn-logs { background-color: #6c757d; }
+    .btn-logs { 
+      background-color: #6c757d; 
+      /* Disable iOS text highlighting and context menus */
+      -webkit-touch-callout: none; 
+      -webkit-user-select: none; 
+      user-select: none; 
+    }
     #logViewer { display: none; }
     #logViewer h2 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
     #logViewer table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -665,7 +671,12 @@
     });
 
     // Admin Long Press Logic (Logs Button)
+    // Admin Long Press Logic (Logs Button)
     var btnLogs = document.getElementById('btnLogs');
+    
+    // Disable right-click context menu entirely for this button
+    btnLogs.oncontextmenu = function(e) { e.preventDefault(); };
+
     btnLogs.addEventListener('touchstart', function(e) {
       adminPressTimer = setTimeout(function() {
         var pin = window.prompt("Enter Admin PIN:");
@@ -676,16 +687,24 @@
         } else if (pin) {
           showCustomAlert("Incorrect PIN.");
         }
-      }, 3000); 
+      }, 2000); // Reduced to 2 seconds for a better feel
     });
+
+    btnLogs.addEventListener('touchmove', function(e) {
+      // Cancel the timer if the user wiggles their finger or scrolls
+      clearTimeout(adminPressTimer);
+    });
+
     btnLogs.addEventListener('touchend', function(e) {
       clearTimeout(adminPressTimer);
     });
+    
     btnLogs.addEventListener('click', function(e) {
       clearTimeout(adminPressTimer);
       if (!isAdminMode) showLogViewer();
     });
 
+    
     // Log Date Filtering
     document.getElementById('btnSearchLogs').addEventListener('click', function() {
       var sDate = normalizeDate(document.getElementById('searchDate').value.trim());
