@@ -1,26 +1,4 @@
 <!DOCTYPE html>
-
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCDNhncWt-G9UsaA_nhtlVwz__EIu5CEe0",
-    authDomain: "vehicle-key-register.firebaseapp.com",
-    projectId: "vehicle-key-register",
-    storageBucket: "vehicle-key-register.firebasestorage.app",
-    messagingSenderId: "842294937790",
-    appId: "1:842294937790:web:7822a611cd8e8a1a0476ef"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  window.db = db;
-  window.fs = { collection, addDoc, getDocs, updateDoc, doc };
-  
-</script>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -322,43 +300,48 @@
     var keysOut = {};
     var logData = [];
   
-   
+    // Load existing log from localStorage
+    var stored = localStorage.getItem('vehicleKeyLog');
+    if (stored) {
+      try { logData = JSON.parse(stored); }
+      catch(e) { logData = []; }
+    }
+    for (var i = 0; i < logData.length; i++) {
+      var e = logData[i];
+      if (e["Date In"] === "") {
+        vehicles[e.Vehicle].push(e.Name);
+        keysOut[e.Name] = {
+          Participant: e.Participant,
+          Vehicle: e.Vehicle,
+          DateOut: e["Date Out"],
+          TimeOut: e["Time Out"]
+        };
+      }
+    }
   
     // Helpers
-    async function saveLogEntry(entry) {
-      await fs.addDoc(fs.collection(db, "vehicleLogs"), entry);
-    }
-    
-   async function loadLogs() {
-
-    logData = [];
-  
-    const snapshot = await fs.getDocs(fs.collection(db, "vehicleLogs"));
-  
-    snapshot.forEach(function(document) {
-      var data = document.data();
-      logData.push(data);
-  
-      if (data["Date In"] === "") {
-  
-        keysOut[data.Name] = {
-          Participant: data.Participant,
-          Vehicle: data.Vehicle,
-          DateOut: data["Date Out"],
-          TimeOut: data["Time Out"]
-        };
-  
-        if (!vehicles[data.Vehicle]) vehicles[data.Vehicle] = [];
-        vehicles[data.Vehicle].push(data.Name);
-  
+    function saveToLocal() {
+      try {
+        localStorage.setItem('vehicleKeyLog', JSON.stringify(logData));
+      } catch(e) {
+        console.warn("Failed to save logData", e);
       }
+    }
+    function pad2(n) { return n < 10 ? "0" + n : n; }
+    function formatDate(d) {
+      return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear();
+    }
+   function formatTime(d) {
+    var h = d.getHours();
+    var m = d.getMinutes();
+    var ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    h = h ? h : 12; // the hour “0” should be “12”
+    return pad2(h) + ":" + pad2(m) + " " + ampm;
+    }
+
   
-    });
-  
-    updateReturnNames();
-    renderLogTable();
-  }
-      
+         
     // UI setup functions
     function setupWelcomeScreen() {
       document.getElementById('welcomeScreen').style.display = 'block';
@@ -415,7 +398,7 @@
     var outDateManual = document.getElementById('outDateManual');
     var outTimeManual = document.getElementById('outTimeManual');
   
-    async function signOut() {
+    function signOut() {
       // ——— Clear any previous error highlights ———
       ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
         var lbl = document.querySelector('label[for="'+id+'"]');
@@ -484,20 +467,16 @@
         DateOut: dOut,
         TimeOut: tOut
       };
-     var entry = {
-      Name: name,
-      Participant: part,
-      Destination: dest,
-      Vehicle: vehicle,
-      "Date Out": dOut,
-      "Time Out": tOut,
-      "Date In": "",
-      "Time In": ""
-    };
-    
-    logData.push(entry);
-    
-    await saveLogEntry(entry);
+      logData.push({
+        Name: name,
+        Participant: part,
+        Destination: dest,
+        Vehicle: vehicle,
+        "Date Out": dOut,
+        "Time Out": tOut,
+        "Date In": "",
+        "Time In": ""
+      });
     
       // ——— Clear error highlights after success ———
       ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
@@ -506,13 +485,13 @@
       });
     
       alert(name + " signed out a key for " + vehicle + ".");
-     
+      saveToLocal();
       document.getElementById('vehiclePreview').style.display = 'none';
       setupMainInterface();
     }
   
     // Sign-in logic
-    async function signIn() {
+    function signIn() {
       var sel     = document.getElementById('inName');
       var name    = sel.value;
       var retDate = document.getElementById('returnDate').value.trim();
@@ -523,31 +502,7 @@
         alert("Please select a name and enter both return date and time.");
         return;
       }
-
-      const snapshot = await fs.getDocs(fs.collection(db, "vehicleLogs"));
-
-      snapshot.forEach(async function(document) {
-      
-        var data = document.data();
-      
-        if (
-          data.Name === name &&
-          data.Vehicle === rec.Vehicle &&
-          data["Date In"] === ""
-        ) {
-      
-          await fs.updateDoc(
-            fs.doc(db, "vehicleLogs", document.id),
-            {
-              "Date In": retDate,
-              "Time In": retTime
-            }
-          );
-      
-        }
-      
-      });
-      
+    
       // ② Validate date format
       if (!isValidDate(retDate)) {
         alert("Please enter a valid return date (e.g. DD/MM/YYYY or D-M-YY).");
@@ -587,11 +542,106 @@
         }
       }
     
-      alert(name + " returned a key for " + rec.Vehicle + ".");    
+      alert(name + " returned a key for " + rec.Vehicle + ".");
+      saveToLocal();
+      updateGistCSV();
       setupMainInterface();
     }
 
-         
+    function convertLogToCSV() {
+      var cols = ["Name","Participant","Destination","Vehicle","Date Out","Time Out","Date In","Time In"];
+      var rows = [cols.join(",")];
+      for (var i = 0; i < logData.length; i++) {
+        var entry = logData[i];
+        var row = cols.map(function(c) {
+          return '"' + (entry[c] || "").replace(/"/g, '""') + '"';
+        }).join(",");
+        rows.push(row);
+      }
+      return rows.join("\n");
+    }
+
+    function updateGistCSV() {
+      var token = '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';
+      var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
+      var csv = convertLogToCSV();
+    
+      var payload = JSON.stringify({
+        files: {
+          "vehicle_key_log.csv": {
+            content: csv
+          }
+        }
+      });
+    
+      var xhr = new XMLHttpRequest();
+      xhr.open("PATCH", 'https://api.github.com/gists/' + gistId, true);
+      xhr.setRequestHeader("Authorization", "token " + token);
+      xhr.setRequestHeader("Content-Type", "application/json");
+    
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log("[✓] Gist updated with latest CSV log.");
+          } else {
+            console.warn("[!] Gist update failed:", xhr.statusText);
+          }
+        }
+      };
+    
+      xhr.send(payload);
+    }
+
+
+    function restoreFromGistCSV() {
+      var correctPassword = "@ce1405keys"; // ✅ Set your password here
+      var attempt = prompt("Enter admin password to restore log:");
+    
+      if (attempt !== correctPassword) {
+        alert("❌ Incorrect password. Restore cancelled.");
+        return;
+      }
+    
+      var token = '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';
+      var gistId = '8091bcad172595f86b05b0e60bdfa8cc';
+    
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", 'https://api.github.com/gists/' + gistId, true);
+      xhr.setRequestHeader("Authorization", "token " + token);
+    
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            var data = JSON.parse(xhr.responseText);
+            var content = data.files["vehicle_key_log.csv"].content;
+            var lines = content.trim().split("\n");
+            var headers = lines[0].split(",");
+            logData = [];
+    
+            for (var i = 1; i < lines.length; i++) {
+              var cells = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // CSV-safe split
+              var obj = {};
+              for (var j = 0; j < headers.length; j++) {
+                obj[headers[j]] = cells[j].replace(/^"|"$/g, "").replace(/""/g, '"');
+              }
+              logData.push(obj);
+            }
+    
+            saveToLocal();
+            updateReturnNames();
+            renderLogTable();
+            alert("✅ Log restored from Gist.");
+          } else {
+            alert("Restore failed: " + xhr.statusText);
+          }
+        }
+      };
+    
+      xhr.send();
+    }
+
+
+
   
     // Populate the Sign-In dropdown
     function updateReturnNames() {
@@ -638,7 +688,8 @@
           cell.addEventListener('blur', function(e) {
             var rowIdx = cell.parentElement.rowIndex - 1;
             var colKey = cols[cell.cellIndex];
-            logData[rowIdx][colKey] = cell.textContent.trim();           
+            logData[rowIdx][colKey] = cell.textContent.trim();
+            saveToLocal();
           });
         })(cells[k]);
       }
@@ -679,7 +730,13 @@
       setupMainInterface();
     }, { passive: false });
   
-    
+    document.getElementById('btnResetLog').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (confirm("Restore log from GitHub Gist? This will replace your current data.")) {
+        restoreFromGistCSV();
+      }
+    });
+
     document.getElementById('btnRefreshLog').addEventListener('click', function(e) {
       e.preventDefault();
       updateReturnNames();
@@ -731,9 +788,8 @@
     });
   
     // Initialize
-  loadLogs();
-  setupWelcomeScreen();
-  resetInactivityTimer();
+    setupWelcomeScreen();
+    resetInactivityTimer();  // Start the timer when the app loads
   </script>
 </body>
 </html>
