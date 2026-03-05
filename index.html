@@ -8,6 +8,14 @@
   <meta name="apple-mobile-web-app-title" content="Key Register">
   <link rel="apple-touch-icon" href="hub_web_logo.png">
   <title>Vehicle Keys Sign In / Sign Out Register</title>
+  
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      alert("JS Error: " + message + " at line " + lineno);
+      return true; 
+    };
+  </script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -49,6 +57,7 @@
       border: none; border-radius: 4px; font-size: 1.6rem;
       color: #fff; cursor: pointer; margin-top: 10px;
     }
+    .btn:disabled { background-color: #999; cursor: not-allowed; }
     .btn-sign-out { background-color: #d9534f; }
     .btn-sign-in  { background-color: #5cb85c; }
     .btn-logs { background-color: #6c757d; }
@@ -85,15 +94,15 @@
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
           <div class="form-group inline-flex">
-            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
-            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters"></div>
+            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"></div>
           </div>
           <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label></div>
           <div id="manualOutFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
             <div><label>Date Out</label><input type="text" id="outDateManual"></div>
             <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
           </div>
-          <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination"></div>
+          <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination" autocomplete="off" autocorrect="off" spellcheck="false"></div>
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
             <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; width:200px; height:auto; margin-bottom:10px;">
@@ -163,6 +172,11 @@
     firebase.initializeApp(firebaseConfig);
     var db = firebase.firestore();
 
+    // Enable Offline Mode for dropped iPad connections
+    db.enablePersistence().catch(function(err) {
+      console.log("Offline persistence failed or unsupported:", err.code);
+    });
+
     // --- 2. GLOBAL STATE ---
     var inactivityTimer;
     var vehicles = {
@@ -183,7 +197,7 @@
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(function () {
         setupWelcomeScreen();
-      }, 5 * 60 * 1000); // 5 minutes
+      }, 5 * 60 * 1000); 
     }
 
     function pad2(n) { return n < 10 ? "0" + n : n; }
@@ -237,7 +251,7 @@
       return re.test(s);
     }
 
-    // --- 4. DATA SYNC (FIREBASE ON-SNAPSHOT) ---
+    // --- 4. DATA SYNC ---
     db.collection("keyLogs").orderBy("timestamp", "desc").limit(60).onSnapshot(function(snapshot) {
       logData = [];
       vehicles = {
@@ -294,10 +308,14 @@
       document.getElementById('mainInterface').style.display = 'block';
       document.getElementById('logViewer').style.display = 'none';
 
+      // Reset fields
       document.getElementById('outName').value = "";
       document.getElementById('outParticipant').value = "";
       document.getElementById('outVehicle').value = "";
       document.getElementById('outDestination').value = "";
+      
+      // HIDE THE VEHICLE IMAGE (Bug Fix)
+      document.getElementById('vehiclePreview').style.display = 'none';
       
       document.getElementById('manualOutToggle').checked = false;
       document.getElementById('manualOutFields').style.display = 'none';
@@ -314,6 +332,7 @@
 
     // --- 6. SIGN OUT LOGIC ---
     document.getElementById('btnSignOut').addEventListener('click', function() {
+      var btn = this;
       var toggle = document.getElementById('manualOutToggle');
       var outDateManual = document.getElementById('outDateManual');
       var outTimeManual = document.getElementById('outTimeManual');
@@ -375,11 +394,17 @@
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
+      btn.disabled = true;
+      btn.innerText = "Processing...";
+
       db.collection("keyLogs").add(logEntry).then(function() {
         alert("Success! Key signed out.");
         setupMainInterface();
       }).catch(function(error) {
         alert("Error signing out: " + error.message);
+      }).finally(function() {
+        btn.disabled = false;
+        btn.innerText = "Sign Out";
       });
     });
 
@@ -398,6 +423,7 @@
     }
 
     document.getElementById('btnSignIn').addEventListener('click', function() {
+      var btn = this;
       var selName = document.getElementById('inName').value;
       if (!selName || !keysOut[selName]) {
         alert("Please select a valid name from the list.");
@@ -416,6 +442,9 @@
 
       var targetDocId = keysOut[selName].docId;
 
+      btn.disabled = true;
+      btn.innerText = "Processing...";
+
       db.collection("keyLogs").doc(targetDocId).update({
         "Date In": dIn,
         "Time In": tIn
@@ -424,6 +453,9 @@
         setupMainInterface();
       }).catch(function(error) {
         alert("Error signing in: " + error.message);
+      }).finally(function() {
+        btn.disabled = false;
+        btn.innerText = "Sign In";
       });
     });
 
@@ -448,11 +480,21 @@
     }
 
     // --- 9. EVENT LISTENERS ---
+    
+    // Stable continue button bindings for old WebKit
+    var continueBtn = document.getElementById('continueBtn');
+    continueBtn.ontouchend = function(e) {
+      e.preventDefault(); 
+      setupMainInterface();
+    };
+    continueBtn.onclick = function() {
+      setupMainInterface();
+    };
+
     ['click', 'touchstart', 'keydown'].forEach(function(evt) {
       document.addEventListener(evt, resetInactivityTimer);
     });
 
-    document.getElementById('continueBtn').addEventListener('click', setupMainInterface);
     document.getElementById('btnLogs').addEventListener('click', showLogViewer);
     document.getElementById('btnBack').addEventListener('click', setupMainInterface);
 
