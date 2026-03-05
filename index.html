@@ -174,7 +174,7 @@
 
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
-            <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; width:200px; height:auto; margin-bottom:10px;">
+            <img id="vehiclePreview" src="" alt="Vehicle Preview" onerror="this.style.display='none';" style="display:none; width:200px; height:auto; margin-bottom:10px;">
             <select id="outVehicle">
               </select>
           </div>
@@ -659,12 +659,12 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
-   // Send to Firebase in the background
+      // 1. Send to Firebase silently in the background
       db.collection("keyLogs").add(logEntry).catch(function(error) {
         console.error("Background sync error: ", error.message);
       });
 
-      // Instantly reset UI (Optimistic update)
+      // 2. Optimistic UI Update: Instantly show success and reset, bypassing any network wait
       showCustomAlert("Success! Key signed out.", function() {
         btn.disabled = false;
         btn.innerText = "Sign Out";
