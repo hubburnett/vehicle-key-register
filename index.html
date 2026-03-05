@@ -659,17 +659,16 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
-      db.collection("keyLogs").add(logEntry).then(function() {
-        showCustomAlert("Success! Key signed out.", function() {
-          btn.disabled = false;
-          btn.innerText = "Sign Out";
-          setupMainInterface();
-        });
-      }).catch(function(error) {
-        showCustomAlert("Error signing out: " + error.message, function() {
-          btn.disabled = false;
-          btn.innerText = "Sign Out";
-        });
+   // Send to Firebase in the background
+      db.collection("keyLogs").add(logEntry).catch(function(error) {
+        console.error("Background sync error: ", error.message);
+      });
+
+      // Instantly reset UI (Optimistic update)
+      showCustomAlert("Success! Key signed out.", function() {
+        btn.disabled = false;
+        btn.innerText = "Sign Out";
+        setupMainInterface();
       });
     });
 
@@ -702,20 +701,19 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
+     // Send to Firebase in the background
       db.collection("keyLogs").doc(targetDocId).update({
         "Date In": formatDate(now),
         "Time In": formatTime(now)
-      }).then(function() {
-        showCustomAlert("Success! Key signed back in.", function() {
-          btn.disabled = false;
-          btn.innerText = "Sign In";
-          setupMainInterface();
-        });
       }).catch(function(error) {
-        showCustomAlert("Error signing in: " + error.message, function() {
-          btn.disabled = false;
-          btn.innerText = "Sign In";
-        });
+        console.error("Background sync error: ", error.message);
+      });
+
+      // Instantly reset UI (Optimistic update)
+      showCustomAlert("Success! Key signed back in.", function() {
+        btn.disabled = false;
+        btn.innerText = "Sign In";
+        setupMainInterface();
       });
     });
 
