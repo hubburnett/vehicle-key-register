@@ -264,7 +264,16 @@
     }
 
     // --- 6. EVENT LISTENERS ---
-    document.getElementById('continueBtn').onclick = setupMainInterface;
+    var continueBtn = document.getElementById('continueBtn');
+
+    // This handles both PC (click) and iPad (touchstart)
+    ['click', 'touchstart'].forEach(function(evt) {
+      continueBtn.addEventListener(evt, function(e) {
+        e.preventDefault(); // Prevents the browser from firing both events
+        setupMainInterface();
+      }, false);
+    });
+    
     document.getElementById('btnSignOut').onclick = signOut;
     document.getElementById('btnSignIn').onclick = signIn;
     document.getElementById('btnBack').onclick = setupMainInterface;
