@@ -41,6 +41,9 @@
       width: 100%; padding: 16px; font-size: 1.4rem;
       border: 1px solid #ccc; border-radius: 4px;
     }
+    select {
+      font-size: 1.4rem; padding: 14px; height: auto; line-height: 1.4;
+    }
     .btn {
       display: block; width: 100%; padding: 20px;
       border: none; border-radius: 4px; font-size: 1.6rem;
@@ -50,38 +53,50 @@
     .btn-sign-in  { background-color: #5cb85c; }
     .btn-logs { background-color: #6c757d; }
     #logViewer { display: none; }
+    #logViewer h2 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
     #logViewer table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    #logViewer th, #logViewer td { padding: 10px; border: 1px solid #ccc; text-align: left; font-size: 0.9rem; }
+    #logViewer th, #logViewer td {
+      padding: 10px; border: 1px solid #ccc;
+      text-align: left; font-size: 1rem;
+    }
+    #logViewer th { background-color: #f4f4f4; }
+    #logViewer button {
+      padding: 15px 25px; font-size: 1rem; margin-right: 10px;
+      border: none; border-radius: 4px; cursor: pointer;
+    }
+    .btn-back { background-color: #6c757d; color: #fff; }
+    label.error { color: red; }
     .inline-flex { display: flex; }
     .inline-flex > * + * { margin-left: 10px; }
-    #vehiclePreview { display: block; margin: 0 auto 15px; max-width: 100%; height: auto; border-radius: 4px; }
+    .panel-description { margin: 12px 0 0px; font-size: 1.3rem; color: #555; line-height: 1.6; }
   </style>
 </head>
 <body>
   <div class="container">
     <div id="welcomeScreen">
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
-      <h2>VEHICLE KEYS SIGN IN / SIGN OUT</h2>
+      <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
       <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>     
     </div>
 
     <div id="mainInterface">
       <div class="panels">
+
         <div class="panel" id="signOutPanel">
           <h3>Sign Out</h3>
           <div class="form-group inline-flex">
-            <div style="flex:1;"><label>Name</label><input type="text" id="outName"></div>
-            <div style="flex:1;"><label>Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;"></div>
+            <div style="flex:1;"><label for="outName">Name</label><input type="text" id="outName"></div>
+            <div style="flex:1;"><label for="outParticipant">Participant</label><input type="text" id="outParticipant" style="text-transform:uppercase;" autocapitalize="characters"></div>
           </div>
-          <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Manual Date/Time</label></div>
+          <div class="form-group"><label><input type="checkbox" id="manualOutToggle"> Enter Date/Time Manually</label></div>
           <div id="manualOutFields" class="inline-flex" style="display:none; flex-wrap:wrap;">
-            <div><label>Date</label><input type="text" id="outDateManual"></div>
-            <div><label>Time</label><input type="text" id="outTimeManual"></div>
+            <div><label>Date Out</label><input type="text" id="outDateManual"></div>
+            <div><label>Time Out</label><input type="text" id="outTimeManual"></div>
           </div>
-          <div class="form-group"><label>Destination</label><input type="text" id="outDestination"></div>
+          <div class="form-group"><label for="outDestination">Destination</label><input type="text" id="outDestination"></div>
           <div class="form-group">
-            <label>Vehicle</label>
-            <img id="vehiclePreview" src="" alt="" style="display:none;">
+            <label for="outVehicle">Vehicle</label>
+            <img id="vehiclePreview" src="" alt="Vehicle Preview" style="display:none; width:200px; height:auto; margin-bottom:10px;">
             <select id="outVehicle">
               <option value="">-- Select Vehicle --</option>
               <option>HiAce Bus - 656 GG4</option>
@@ -95,28 +110,40 @@
         <div class="panel" id="signInPanel">
           <h3>Sign In</h3>
           <div class="form-group">
-            <label>Select Name</label>
-            <select id="inName"><option value="">-- Select Name --</option></select>
+            <label for="inName">Select Name</label>
+            <select id="inName">
+              <option value="">-- Select Name --</option>
+            </select>
           </div>
-          <div class="form-group inline-flex">
-            <div style="flex:1;"><label>Return Date</label><input type="text" id="returnDate"></div>
-            <div style="flex:1;"><label>Return Time</label><input type="text" id="returnTime"></div>
+          <div class="form-group inline-flex" style="flex-wrap:wrap;">
+            <div style="flex:1;">
+              <label for="returnDate">Return Date</label>
+              <input type="text" id="returnDate">
+            </div>
+            <div style="flex:1;">
+              <label for="returnTime">Return Time</label>
+              <input type="text" id="returnTime">
+            </div>
           </div>
-          <button class="btn btn-logs" id="btnLogs" style="margin-top:20px;">View Logs</button>
-          <button class="btn btn-sign-in" id="btnSignIn" style="margin-top:20px;">Sign In / Return Key</button>
+          <button class="btn btn-logs" id="btnLogs">Logs</button>
+          <p class="panel-description">
+            This digital key register automatically timestamps every sign-in and sign-out,
+            fills in vehicle info, and stores the log securely.
+          </p>
+          <button class="btn btn-sign-in" id="btnSignIn">Sign In</button>
         </div>
-      </div>
+      </div> 
     </div>
 
     <div id="logViewer">
-      <h2>Recent Logs</h2>
+      <h2>Log Viewer</h2>
       <table id="logTable">
         <thead>
-          <tr><th>Name</th><th>Part.</th><th>Veh.</th><th>Out</th><th>Time</th><th>In</th><th>Time</th></tr>
+          <tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr>
         </thead>
         <tbody></tbody>
       </table>
-      <button class="btn btn-logs" id="btnBack">Back</button>
+      <button class="btn btn-back" id="btnBack">Back</button>
     </div>
   </div>
 
@@ -124,7 +151,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // --- 1. CONFIG ---
+    // --- 1. FIREBASE CONFIG ---
     var firebaseConfig = {
       apiKey: "AIzaSyCDNhncWt-G9UsaA_nhtlVwz__EIu5CEe0",
       authDomain: "vehicle-key-register.firebaseapp.com",
@@ -133,13 +160,16 @@
       messagingSenderId: "842294937790",
       appId: "1:842294937790:web:7822a611cd8e8a1a0476ef"
     };
-
     firebase.initializeApp(firebaseConfig);
     var db = firebase.firestore();
 
-    // --- 2. STATE ---
+    // --- 2. GLOBAL STATE ---
     var inactivityTimer;
-    var vehicles = { "HiAce Bus - 656 GG4": [], "Outlander - 717 AM3": [], "Outlander - 402 LG5": [] };
+    var vehicles = {
+      "HiAce Bus - 656 GG4": [],
+      "Outlander - 717 AM3": [],
+      "Outlander - 402 LG5": []
+    };
     var keysOut = {};
     var logData = [];
     var vehicleImageMap = {
@@ -148,142 +178,285 @@
       "Outlander - 402 LG5": "outlander2.jpg"
     };
 
-    // --- 3. DATA SYNC (Using ES5 Syntax) ---
-    db.collection("keyLogs").orderBy("Date Out", "desc").limit(50).onSnapshot(function(snapshot) {
+    // --- 3. HELPER FUNCTIONS ---
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(function () {
+        setupWelcomeScreen();
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+
+    function pad2(n) { return n < 10 ? "0" + n : n; }
+    
+    function formatDate(d) { 
+      return pad2(d.getDate()) + "-" + pad2(d.getMonth()+1) + "-" + d.getFullYear(); 
+    }
+    
+    function formatTime(d) {
+      var h = d.getHours(); var m = d.getMinutes();
+      var ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12; h = h ? h : 12;
+      return pad2(h) + ":" + pad2(m) + " " + ampm;
+    }
+
+    function normalizeDate(s) {
+      var re = /^(\d{1,2})([\/\-])(\d{1,2})\2(\d{2}|\d{4})$/;
+      var m  = s.match(re);
+      if (!m) return s;
+      var day   = ('0' + parseInt(m[1],10)).slice(-2);
+      var month = ('0' + parseInt(m[3],10)).slice(-2);
+      var year  = m[4].length === 2 ? '20' + m[4] : m[4];
+      return day + '-' + month + '-' + year;
+    }
+
+    function normalizeTime(s) {
+      var re = /^\s*(1[0-2]|[1-9])[:\-\.]?([0-5]\d)\s*(AM|PM)\s*$/i;
+      var m = s.match(re);
+      if (!m) return s;
+      var h    = parseInt(m[1], 10);
+      var mm   = ('0' + parseInt(m[2], 10)).slice(-2);
+      var ampm = m[3].toUpperCase();
+      return pad2(h) + ':' + mm + ' ' + ampm;
+    }
+
+    function isValidDate(s) {
+      var re = /^(\d{1,2})([\/\-])(\d{1,2})\2(\d{2}|\d{4})$/;
+      var m = s.match(re);
+      if (!m) return false;
+      var day   = parseInt(m[1], 10),
+          month = parseInt(m[3], 10),
+          year  = parseInt(m[4], 10);
+      if (m[4].length === 2) year += 2000;
+      if (month < 1 || month > 12) return false;
+      var mdays = [31, ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 29 : 28, 31,30,31,30,31,31,30,31,30,31];
+      return day >= 1 && day <= mdays[month - 1];
+    }
+
+    function isValidAmPm(s) {
+      var re = /^\s*(0?[1-9]|1[0-2])[:\-\.]?([0-5]\d)\s*(AM|PM)\s*$/i;
+      return re.test(s);
+    }
+
+    // --- 4. DATA SYNC (FIREBASE ON-SNAPSHOT) ---
+    db.collection("keyLogs").orderBy("timestamp", "desc").limit(60).onSnapshot(function(snapshot) {
       logData = [];
-      vehicles = { "HiAce Bus - 656 GG4": [], "Outlander - 717 AM3": [], "Outlander - 402 LG5": [] };
+      vehicles = {
+        "HiAce Bus - 656 GG4": [],
+        "Outlander - 717 AM3": [],
+        "Outlander - 402 LG5": []
+      };
       keysOut = {};
 
       snapshot.forEach(function(doc) {
-        var data = doc.data();
-        data.id = doc.id;
-        logData.push(data);
+        var e = doc.data();
+        e.id = doc.id;
+        logData.push(e);
 
-        if (data["Date In"] === "") {
-          if (vehicles[data.Vehicle]) vehicles[data.Vehicle].push(data.Name);
-          keysOut[data.Name] = { id: doc.id, Vehicle: data.Vehicle };
+        if (e["Date In"] === "") {
+          if (vehicles[e.Vehicle]) vehicles[e.Vehicle].push(e.Name);
+          keysOut[e.Name] = {
+            Participant: e.Participant,
+            Vehicle: e.Vehicle,
+            DateOut: e["Date Out"],
+            TimeOut: e["Time Out"],
+            docId: doc.id
+          };
         }
       });
+      
       updateReturnNames();
-      if (document.getElementById('logViewer').style.display === 'block') renderLogTable();
+      if (document.getElementById('logViewer').style.display === 'block') {
+        renderLogTable();
+      }
+    }, function(error) {
+      console.error("Error syncing keys:", error);
     });
 
-    // --- 4. FUNCTIONS ---
-    function signOut() {
-      var name = document.getElementById('outName').value.trim();
-      var part = document.getElementById('outParticipant').value.trim().toUpperCase();
-      var dest = document.getElementById('outDestination').value.trim();
-      var vehicle = document.getElementById('outVehicle').value;
-
-      if (!name || !part || !dest || !vehicle) { alert("Fill all fields."); return; }
-      if (vehicles[vehicle].length >= 2) { alert("Both keys for " + vehicle + " are out."); return; }
-
-      var now = new Date();
-      var dOut = document.getElementById('manualOutToggle').checked ? document.getElementById('outDateManual').value : formatDate(now);
-      var tOut = document.getElementById('manualOutToggle').checked ? document.getElementById('outTimeManual').value : formatTime(now);
-
-      db.collection("keyLogs").add({
-        Name: name, Participant: part, Destination: dest, Vehicle: vehicle,
-        "Date Out": dOut, "Time Out": tOut, "Date In": "", "Time In": ""
-      }).then(function() {
-        setupMainInterface();
-      });
-    }
-
-    function signIn() {
-      var name = document.getElementById('inName').value;
-      var retDate = document.getElementById('returnDate').value.trim();
-      var retTime = document.getElementById('returnTime').value.trim();
-      if (!name) { alert("Select a name."); return; }
-
-      db.collection("keyLogs").doc(keysOut[name].id).update({
-        "Date In": retDate, "Time In": retTime
-      }).then(function() {
-        setupMainInterface();
-      });
-    }
-
-    // --- 5. HELPERS ---
-    function formatDate(d) { 
-      return ('0'+d.getDate()).slice(-2)+"-"+('0'+(d.getMonth()+1)).slice(-2)+"-"+d.getFullYear(); 
-    }
-    function formatTime(d) {
-      var h = d.getHours(), m = d.getMinutes(), ampm = h >= 12 ? "PM" : "AM";
-      h = h % 12 || 12;
-      return ('0'+h).slice(-2)+":"+('0'+m).slice(-2)+" "+ampm;
-    }
-
+    // --- 5. UI SETUP ---
     function setupWelcomeScreen() {
       document.getElementById('welcomeScreen').style.display = 'block';
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
     }
 
-    function setupMainInterface() {
-      document.getElementById('welcomeScreen').style.display = 'none';
-      document.getElementById('mainInterface').style.display = 'block';
-      document.getElementById('logViewer').style.display = 'none';
-      document.getElementById('outName').value = "";
-      document.getElementById('outParticipant').value = "";
-      document.getElementById('outDestination').value = "";
-      document.getElementById('outVehicle').value = "";
-      document.getElementById('vehiclePreview').style.display = 'none';
+    function updateDefaultTimestamps() {
       var now = new Date();
+      if (!document.getElementById('manualOutToggle').checked) {
+        document.getElementById('outDateManual').value = formatDate(now);
+        document.getElementById('outTimeManual').value = formatTime(now);
+      }
       document.getElementById('returnDate').value = formatDate(now);
       document.getElementById('returnTime').value = formatTime(now);
     }
 
-    function updateReturnNames() {
-      var sel = document.getElementById('inName');
-      sel.innerHTML = '<option value="">-- Select Name --</option>';
-      for (var n in keysOut) {
-        var o = document.createElement('option');
-        o.value = n; o.textContent = n + " (" + keysOut[n].Vehicle + ")";
-        sel.appendChild(o);
-      }
+    function setupMainInterface() {
+      document.getElementById('welcomeScreen').style.display = 'none';
+      document.getElementById('mainInterface').style.display = 'block';
+      document.getElementById('logViewer').style.display = 'none';
+
+      document.getElementById('outName').value = "";
+      document.getElementById('outParticipant').value = "";
+      document.getElementById('outVehicle').value = "";
+      document.getElementById('outDestination').value = "";
+      
+      document.getElementById('manualOutToggle').checked = false;
+      document.getElementById('manualOutFields').style.display = 'none';
+
+      updateDefaultTimestamps();
+      updateReturnNames();
     }
 
-    function renderLogTable() {
-      var tbody = document.querySelector('#logTable tbody');
-      tbody.innerHTML = '';
-      logData.forEach(function(e) {
-        var tr = document.createElement('tr');
-        var cols = [e.Name, e.Participant, e.Vehicle, e["Date Out"], e["Time Out"], e["Date In"], e["Time In"]];
-        cols.forEach(function(val) {
-          var td = document.createElement('td');
-          td.textContent = val || "-";
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-    }
-
-    function resetInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(setupWelcomeScreen, 300000); // 5 mins
-    }
-
-    // --- 6. EVENT LISTENERS ---
-    var continueBtn = document.getElementById('continueBtn');
-
-    // This handles both PC (click) and iPad (touchstart)
-    ['click', 'touchstart'].forEach(function(evt) {
-      continueBtn.addEventListener(evt, function(e) {
-        e.preventDefault(); // Prevents the browser from firing both events
-        setupMainInterface();
-      }, false);
-    });
-    
-    document.getElementById('btnSignOut').onclick = signOut;
-    document.getElementById('btnSignIn').onclick = signIn;
-    document.getElementById('btnBack').onclick = setupMainInterface;
-    document.getElementById('btnLogs').onclick = function() {
+    function showLogViewer() {
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'block';
       renderLogTable();
-    };
+    }
 
-    document.getElementById('outVehicle').onchange = function() {
+    // --- 6. SIGN OUT LOGIC ---
+    document.getElementById('btnSignOut').addEventListener('click', function() {
+      var toggle = document.getElementById('manualOutToggle');
+      var outDateManual = document.getElementById('outDateManual');
+      var outTimeManual = document.getElementById('outTimeManual');
+      
+      ['outName','outParticipant','outDestination','outVehicle'].forEach(function(id){
+        var lbl = document.querySelector('label[for="'+id+'"]');
+        if (lbl) lbl.classList.remove('error');
+      });
+
+      var name = document.getElementById('outName').value.trim();
+      var part = document.getElementById('outParticipant').value.trim().toUpperCase();
+      var dest = document.getElementById('outDestination').value.trim();
+      var vehicle = document.getElementById('outVehicle').value;
+
+      var missing = [];
+      if (!name) missing.push('outName');
+      if (!part) missing.push('outParticipant');
+      if (!dest) missing.push('outDestination');
+      if (!vehicle) missing.push('outVehicle');
+
+      if (missing.length) {
+        missing.forEach(function(id){
+          var lbl = document.querySelector('label[for="'+id+'"]');
+          if (lbl) lbl.classList.add('error');
+        });
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      if (vehicles[vehicle] && vehicles[vehicle].length >= 2) {
+        alert("All keys for " + vehicle + " are currently signed out.");
+        return;
+      }
+
+      var now = new Date();
+      var dOut = formatDate(now);
+      var tOut = formatTime(now);
+
+      if (toggle.checked) {
+        dOut = normalizeDate(outDateManual.value);
+        tOut = normalizeTime(outTimeManual.value);
+        if (!isValidDate(dOut)) {
+          alert("Please enter a valid Date Out (DD/MM/YY or DD-MM-YYYY)."); return;
+        }
+        if (!isValidAmPm(tOut)) {
+          alert("Please enter a valid Time Out (e.g. 1:15 PM)."); return;
+        }
+      }
+
+      var logEntry = {
+        Name: name,
+        Participant: part,
+        Destination: dest,
+        Vehicle: vehicle,
+        "Date Out": dOut,
+        "Time Out": tOut,
+        "Date In": "",
+        "Time In": "",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      db.collection("keyLogs").add(logEntry).then(function() {
+        alert("Success! Key signed out.");
+        setupMainInterface();
+      }).catch(function(error) {
+        alert("Error signing out: " + error.message);
+      });
+    });
+
+    // --- 7. SIGN IN LOGIC ---
+    function updateReturnNames() {
+      var select = document.getElementById('inName');
+      select.innerHTML = '<option value="">-- Select Name --</option>';
+      for (var k in keysOut) {
+        if (keysOut.hasOwnProperty(k)) {
+          var opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = k + " (" + keysOut[k].Vehicle + ")";
+          select.appendChild(opt);
+        }
+      }
+    }
+
+    document.getElementById('btnSignIn').addEventListener('click', function() {
+      var selName = document.getElementById('inName').value;
+      if (!selName || !keysOut[selName]) {
+        alert("Please select a valid name from the list.");
+        return;
+      }
+
+      var dIn = normalizeDate(document.getElementById('returnDate').value);
+      var tIn = normalizeTime(document.getElementById('returnTime').value);
+
+      if (!isValidDate(dIn)) {
+        alert("Invalid Return Date."); return;
+      }
+      if (!isValidAmPm(tIn)) {
+        alert("Invalid Return Time."); return;
+      }
+
+      var targetDocId = keysOut[selName].docId;
+
+      db.collection("keyLogs").doc(targetDocId).update({
+        "Date In": dIn,
+        "Time In": tIn
+      }).then(function() {
+        alert("Success! Key signed back in.");
+        setupMainInterface();
+      }).catch(function(error) {
+        alert("Error signing in: " + error.message);
+      });
+    });
+
+    // --- 8. LOG VIEWER ---
+    function renderLogTable() {
+      var tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = "";
+      for (var i = 0; i < logData.length; i++) {
+        var e = logData[i];
+        var tr = document.createElement('tr');
+        tr.innerHTML = 
+          "<td>" + (e.Name || "") + "</td>" +
+          "<td>" + (e.Participant || "") + "</td>" +
+          "<td>" + (e.Destination || "") + "</td>" +
+          "<td>" + (e.Vehicle || "") + "</td>" +
+          "<td>" + (e["Date Out"] || "") + "</td>" +
+          "<td>" + (e["Time Out"] || "") + "</td>" +
+          "<td>" + (e["Date In"] || "") + "</td>" +
+          "<td>" + (e["Time In"] || "") + "</td>";
+        tbody.appendChild(tr);
+      }
+    }
+
+    // --- 9. EVENT LISTENERS ---
+    ['click', 'touchstart', 'keydown'].forEach(function(evt) {
+      document.addEventListener(evt, resetInactivityTimer);
+    });
+
+    document.getElementById('continueBtn').addEventListener('click', setupMainInterface);
+    document.getElementById('btnLogs').addEventListener('click', showLogViewer);
+    document.getElementById('btnBack').addEventListener('click', setupMainInterface);
+
+    document.getElementById('outVehicle').addEventListener('change', function() {
       var img = document.getElementById('vehiclePreview');
       if (vehicleImageMap[this.value]) {
         img.src = vehicleImageMap[this.value];
@@ -291,19 +464,25 @@
       } else {
         img.style.display = 'none';
       }
-    };
+    });
 
-    document.getElementById('manualOutToggle').onchange = function() {
+    document.getElementById('manualOutToggle').addEventListener('change', function() {
       document.getElementById('manualOutFields').style.display = this.checked ? 'flex' : 'none';
-    };
+    });
 
-    // iPad specific: Blur on Enter to hide keyboard
-    document.getElementById('outDestination').onkeydown = function(e) {
-      if (e.keyCode === 13) this.blur();
-    };
+    document.getElementById('outDestination').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        this.blur();
+      }
+    });
 
-    document.addEventListener('click', resetInactivityTimer);
-    window.onload = setupWelcomeScreen;
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) setupWelcomeScreen();
+    });
+
+    // Start App
+    setupWelcomeScreen();
   </script>
 </body>
 </html>
