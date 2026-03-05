@@ -333,28 +333,6 @@
 
       logData = [];
     
-      const snapshot = await fs.getDocs(fs.collection(db, "vehicleLogs"));
-    
-      snapshot.forEach(function(docSnap) {
-    
-        var entry = docSnap.data();
-        logData.push(entry);
-    
-        if (entry["Date In"] === "") {
-    
-          vehicles[entry.Vehicle].push(entry.Name);
-    
-          keysOut[entry.Name] = {
-            Participant: entry.Participant,
-            Vehicle: entry.Vehicle,
-            DateOut: entry["Date Out"],
-            TimeOut: entry["Time Out"]
-          };
-    
-        }
-    
-      });
-    
       updateReturnNames();
       renderLogTable();
     
