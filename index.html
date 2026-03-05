@@ -426,7 +426,19 @@
         return;
       }
 
-      if (vehicles[vehicle] && vehicles[vehicle].length >= 2 && vehicle.indexOf("Outlander") !== -1) {
+      // Enforce limits: 1 for Permit/Meals on Wheels, 2 for all regular vehicles
+      var maxKeys = {
+        "Meals on Wheels": 1,
+        "Personal Vehicle": 1,
+        "HiAce Bus - 656 GG4": 2,
+        "Outlander - 717 AM3": 2,
+        "Outlander - 402 LG5": 2
+      };
+      
+      var limit = maxKeys[vehicle] || 2; // Default to 2 if not explicitly listed
+      var currentlyOut = vehicles[vehicle] ? vehicles[vehicle].length : 0;
+      
+      if (currentlyOut >= limit) {
         showCustomAlert("All keys for " + vehicle + " are currently signed out.");
         return;
       }
@@ -467,8 +479,12 @@
         if (keysOut.hasOwnProperty(docId)) {
           var k = keysOut[docId];
           var opt = document.createElement('option');
-          opt.value = docId; // Use docId so multiple vehicles for one name works perfectly
-          opt.textContent = k.Name + " (" + k.Vehicle + ")";
+          opt.value = docId; 
+          
+          // Format: Staff Name (Participants) - Vehicle
+          var partText = k.Participant ? " (" + k.Participant + ")" : "";
+          opt.textContent = k.Name + partText + " - " + k.Vehicle;
+          
           select.appendChild(opt);
         }
       }
