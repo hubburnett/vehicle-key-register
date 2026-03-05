@@ -329,41 +329,36 @@
       await fs.addDoc(fs.collection(db, "vehicleLogs"), entry);
     }
     
-    async function loadLogs() {
+   async function loadLogs() {
 
-      logData = [];
-    
-      updateReturnNames();
-      renderLogTable();
-    
-    }
-
-
+    logData = [];
+  
     const snapshot = await fs.getDocs(fs.collection(db, "vehicleLogs"));
-
-    snapshot.forEach(async function(document) {
-    
+  
+    snapshot.forEach(function(document) {
       var data = document.data();
-    
-      if (
-        data.Name === name &&
-        data.Vehicle === rec.Vehicle &&
-        data["Date In"] === ""
-      ) {
-    
-        await fs.updateDoc(
-          fs.doc(db, "vehicleLogs", document.id),
-          {
-            "Date In": retDate,
-            "Time In": retTime
-          }
-        );
-    
+      logData.push(data);
+  
+      if (data["Date In"] === "") {
+  
+        keysOut[data.Name] = {
+          Participant: data.Participant,
+          Vehicle: data.Vehicle,
+          DateOut: data["Date Out"],
+          TimeOut: data["Time Out"]
+        };
+  
+        if (!vehicles[data.Vehicle]) vehicles[data.Vehicle] = [];
+        vehicles[data.Vehicle].push(data.Name);
+  
       }
-    
+  
     });
-
-    
+  
+    updateReturnNames();
+    renderLogTable();
+  }
+      
     // UI setup functions
     function setupWelcomeScreen() {
       document.getElementById('welcomeScreen').style.display = 'block';
@@ -528,7 +523,31 @@
         alert("Please select a name and enter both return date and time.");
         return;
       }
-    
+
+      const snapshot = await fs.getDocs(fs.collection(db, "vehicleLogs"));
+
+      snapshot.forEach(async function(document) {
+      
+        var data = document.data();
+      
+        if (
+          data.Name === name &&
+          data.Vehicle === rec.Vehicle &&
+          data["Date In"] === ""
+        ) {
+      
+          await fs.updateDoc(
+            fs.doc(db, "vehicleLogs", document.id),
+            {
+              "Date In": retDate,
+              "Time In": retTime
+            }
+          );
+      
+        }
+      
+      });
+      
       // ② Validate date format
       if (!isValidDate(retDate)) {
         alert("Please enter a valid return date (e.g. DD/MM/YYYY or D-M-YY).");
