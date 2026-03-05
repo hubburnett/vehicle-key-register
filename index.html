@@ -113,6 +113,9 @@
       flex: 1; padding: 15px; font-size: 1.3rem; color: #fff;
       border: none; border-radius: 5px; cursor: pointer;
     }
+    .modal-box button + button { 
+      margin-left: 10px; 
+    }
   </style>
 </head>
 <body>
@@ -227,7 +230,7 @@
     <div class="modal-box">
       <p id="customModalText"></p>
       <input type="password" id="customModalInput" style="display:none; width:100%; margin-bottom:20px; padding:15px; font-size:1.4rem; text-align:center; border:1px solid #ccc; border-radius:4px;" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Enter PIN">
-      <div style="display:flex; justify-content:space-between; gap:10px;">
+      <div style="display:flex; justify-content:space-between;">
         <button id="customModalBtnCancel" style="display:none; background:#6c757d;">Cancel</button>
         <button id="customModalBtnOK" style="background:#007bff;">OK</button>
       </div>
@@ -284,7 +287,9 @@
       btnModalOK.innerText = 'OK';
       btnModalOK.style.background = '#007bff';
       btnModalOK.onclick = null;
+      btnModalOK.ontouchend = null;
       btnModalCancel.onclick = null;
+      btnModalCancel.ontouchend = null;
     }
 
     function closeCustomModal() {
@@ -296,10 +301,16 @@
       resetModal();
       modalText.innerText = msg;
       modalOverlay.style.display = 'block';
-      btnModalOK.onclick = function() {
+      
+      var handler = function(e) {
+        if(e && e.type === 'touchend') e.preventDefault();
+        btnModalOK.onclick = null; btnModalOK.ontouchend = null; // Prevent double-fire
         closeCustomModal();
         if (callback) callback();
       };
+      
+      btnModalOK.onclick = handler;
+      btnModalOK.ontouchend = handler;
     };
 
     window.showCustomConfirm = function(msg, callback) {
@@ -310,14 +321,24 @@
       btnModalOK.style.background = '#d9534f';
       modalOverlay.style.display = 'block';
       
-      btnModalCancel.onclick = function() {
+      var cancelHandler = function(e) {
+        if(e && e.type === 'touchend') e.preventDefault();
+        btnModalCancel.onclick = null; btnModalCancel.ontouchend = null;
         closeCustomModal();
         if (callback) callback(false);
       };
-      btnModalOK.onclick = function() {
+      
+      var confirmHandler = function(e) {
+        if(e && e.type === 'touchend') e.preventDefault();
+        btnModalOK.onclick = null; btnModalOK.ontouchend = null;
         closeCustomModal();
         if (callback) callback(true);
       };
+
+      btnModalCancel.onclick = cancelHandler;
+      btnModalCancel.ontouchend = cancelHandler;
+      btnModalOK.onclick = confirmHandler;
+      btnModalOK.ontouchend = confirmHandler;
     };
 
     window.showCustomPrompt = function(msg, callback) {
@@ -327,15 +348,25 @@
       btnModalCancel.style.display = 'block';
       modalOverlay.style.display = 'block';
       
-      btnModalCancel.onclick = function() {
+      var cancelHandler = function(e) {
+        if(e && e.type === 'touchend') e.preventDefault();
+        btnModalCancel.onclick = null; btnModalCancel.ontouchend = null;
         closeCustomModal();
         if (callback) callback(null);
       };
-      btnModalOK.onclick = function() {
+      
+      var okHandler = function(e) {
+        if(e && e.type === 'touchend') e.preventDefault();
+        btnModalOK.onclick = null; btnModalOK.ontouchend = null;
         var val = modalInput.value;
         closeCustomModal();
         if (callback) callback(val);
       };
+
+      btnModalCancel.onclick = cancelHandler;
+      btnModalCancel.ontouchend = cancelHandler;
+      btnModalOK.onclick = okHandler;
+      btnModalOK.ontouchend = okHandler;
     };
 
     // --- 4. HELPER FUNCTIONS ---
@@ -455,6 +486,7 @@
     }
 
     function setupMainInterface() {
+      isAdminMode = false; // Strictly reset Admin Mode on exit
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
       document.getElementById('logViewer').style.display = 'none';
