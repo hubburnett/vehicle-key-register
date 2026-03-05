@@ -399,10 +399,11 @@
 
       db.collection("keyLogs").add(logEntry).then(function() {
         alert("Success! Key signed out.");
+        btn.disabled = false;
+        btn.innerText = "Sign Out";
         setupMainInterface();
       }).catch(function(error) {
         alert("Error signing out: " + error.message);
-      }).finally(function() {
         btn.disabled = false;
         btn.innerText = "Sign Out";
       });
@@ -450,10 +451,11 @@
         "Time In": tIn
       }).then(function() {
         alert("Success! Key signed back in.");
+        btn.disabled = false;
+        btn.innerText = "Sign In";
         setupMainInterface();
       }).catch(function(error) {
         alert("Error signing in: " + error.message);
-      }).finally(function() {
         btn.disabled = false;
         btn.innerText = "Sign In";
       });
