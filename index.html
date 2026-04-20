@@ -212,22 +212,25 @@
     </div>
 
     <div id="logViewer">
-      <h2>Log Viewer</h2>
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <button class="btn btn-back" id="btnBack" style="width: auto; padding: 10px 20px; margin: 0; font-size: 1.2rem;">⬅ Back</button>
+        <h2 style="margin: 0; flex-grow: 1; text-align: center; padding-right: 80px;">Log Viewer</h2>
+      </div>
+
       <div style="text-align: center; margin-bottom: 20px;">
         <input type="text" id="searchDate" placeholder="DD-MM-YYYY" style="width: auto; display: inline-block; padding: 10px; font-size: 1.2rem; margin-right: 10px;">
         <button id="btnSearchLogs" style="padding: 10px 20px; font-size: 1.2rem; background: #007bff; color: white; border: none; border-radius: 4px;">Search</button>
         <button id="btnClearSearch" style="display: none; padding: 10px 20px; font-size: 1.2rem; background: #6c757d; color: white; border: none; border-radius: 4px; margin-left: 10px;">Clear</button>
       </div>
+      
       <table id="logTable">
         <thead>
           <tr><th>Name</th><th>Participant</th><th>Destination</th><th>Vehicle</th><th>Date Out</th><th>Time Out</th><th>Date In</th><th>Time In</th></tr>
         </thead>
         <tbody></tbody>
       </table>
-      <button class="btn btn-back" id="btnBack">Back</button>
     </div>
-  </div>
-
+    
   <div class="modal-overlay" id="customModalOverlay">
     <div class="modal-box">
       <p id="customModalText"></p>
@@ -588,6 +591,7 @@
     // --- 8. SIGN OUT LOGIC ---
     document.getElementById('btnSignOut').addEventListener('click', function() {
       var btn = this;
+      if (btn.disabled) return;
       
       ['outName','lblDestination','outVehicle'].forEach(function(id){
         var lbl = document.getElementById(id) || document.querySelector('label[for="'+id+'"]');
@@ -661,17 +665,20 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
-      // 1. Send to Firebase silently in the background
-      db.collection("keyLogs").add(logEntry).catch(function(error) {
-        console.error("Background sync error: ", error.message);
-      });
-
-      // 2. Optimistic UI Update: Instantly show success and reset, bypassing any network wait
-      showCustomAlert("Success! Key signed out.", function() {
-        btn.disabled = false;
-        btn.innerText = "Sign Out";
-        setupMainInterface();
-      });
+         db.collection("keyLogs").add(logEntry)
+        .then(function() {
+          showCustomAlert("Success! Key signed out.", function() {
+            btn.disabled = false;
+            btn.innerText = "Sign Out";
+            setupMainInterface();
+          });
+        })
+        .catch(function(error) {
+          console.error("Error:", error);
+          showCustomAlert("Network Error. Please try again.");
+          btn.disabled = false;
+          btn.innerText = "Sign Out";
+        });
     });
 
     // --- 9. SIGN IN LOGIC ---
@@ -692,6 +699,7 @@
 
     document.getElementById('btnSignIn').addEventListener('click', function() {
       var btn = this;
+      if (btn.disabled) return;
       var targetDocId = document.getElementById('inName').value;
       
       if (!targetDocId || !keysOut[targetDocId]) {
@@ -703,19 +711,21 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
-     // Send to Firebase in the background
-      db.collection("keyLogs").doc(targetDocId).update({
-        "Date In": formatDate(now),
-        "Time In": formatTime(now)
-      }).catch(function(error) {
-        console.error("Background sync error: ", error.message);
-      });
-
-      // Instantly reset UI (Optimistic update)
-      showCustomAlert("Success! Key signed back in.", function() {
+         db.collection("keyLogs").doc(targetDocId).update({
+        "Date In": formatDate(new Date()),
+        "Time In": formatTime(new Date())
+      })
+      .then(function() {
+        showCustomAlert("Success! Key signed back in.", function() {
+          btn.disabled = false;
+          btn.innerText = "Sign In";
+          setupMainInterface();
+        });
+      })
+      .catch(function(error) {
+        showCustomAlert("Sync failed. Check connection.");
         btn.disabled = false;
         btn.innerText = "Sign In";
-        setupMainInterface();
       });
     });
 
