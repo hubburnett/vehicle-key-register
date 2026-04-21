@@ -252,6 +252,21 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <script>
+    if (!Object.values) {
+      Object.values = function(obj) {
+        if (obj !== Object(obj)) throw new TypeError('Object.values called on a non-object');
+        var val = [], key;
+        for (key in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            val.push(obj[key]);
+          }
+        }
+        return val;
+      };
+    }
+  </script>
+
+  <script>
     // --- 1. FIREBASE CONFIG ---
     var firebaseConfig = {
       apiKey: "AIzaSyCDNhncWt-G9UsaA_nhtlVwz__EIu5CEe0",
@@ -262,7 +277,11 @@
       appId: "1:842294937790:web:7822a611cd8e8a1a0476ef"
     };
     firebase.initializeApp(firebaseConfig);
+    
     var db = firebase.firestore();
+    
+    // Tell Firebase to use a connection method compatible with older iPads
+    db.settings({ experimentalForceLongPolling: true });
 
     // --- 2. GLOBAL STATE ---
     var inactivityTimer;
