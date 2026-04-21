@@ -264,10 +264,6 @@
     firebase.initializeApp(firebaseConfig);
     var db = firebase.firestore();
 
-    db.enablePersistence().catch(function(err) {
-      console.log("Offline persistence failed:", err.code);
-    });
-
     // --- 2. GLOBAL STATE ---
     var inactivityTimer;
     var isAdminMode = false;
@@ -671,20 +667,31 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
-         db.collection("keyLogs").add(logEntry)
-        .then(function() {
-          showCustomAlert("Success! Key signed out.", function() {
-            btn.disabled = false;
-            btn.innerText = "Sign Out";
-            setupMainInterface();
-          });
-        })
-        .catch(function(error) {
-          console.error("Error:", error);
-          showCustomAlert("Network Error. Please try again.");
+      // Create a 5-second timeout
+      var timeout = new Promise(function(resolve, reject) {
+        setTimeout(function() {
+          reject(new Error("Timeout: The network connection is too slow or offline."));
+        }, 5000);
+      });
+
+      // Race Firebase against the timeout
+      Promise.race([
+        db.collection("keyLogs").add(logEntry),
+        timeout
+      ])
+      .then(function() {
+        showCustomAlert("Success! Key signed out.", function() {
           btn.disabled = false;
           btn.innerText = "Sign Out";
+          setupMainInterface();
         });
+      })
+      .catch(function(error) {
+        console.error("Error:", error);
+        showCustomAlert("Network Error. Please check connection and try again.");
+        btn.disabled = false;
+        btn.innerText = "Sign Out";
+      });
     });
 
     // --- 9. SIGN IN LOGIC ---
@@ -717,10 +724,21 @@
       btn.disabled = true;
       btn.innerText = "Processing...";
 
-         db.collection("keyLogs").doc(targetDocId).update({
-        "Date In": formatDate(new Date()),
-        "Time In": formatTime(new Date())
-      })
+      // Create a 5-second timeout
+      var timeout = new Promise(function(resolve, reject) {
+        setTimeout(function() {
+          reject(new Error("Timeout: The network connection is too slow or offline."));
+        }, 5000);
+      });
+
+      // Race Firebase against the timeout
+      Promise.race([
+        db.collection("keyLogs").doc(targetDocId).update({
+          "Date In": formatDate(now),
+          "Time In": formatTime(now)
+        }),
+        timeout
+      ])
       .then(function() {
         showCustomAlert("Success! Key signed back in.", function() {
           btn.disabled = false;
@@ -729,7 +747,8 @@
         });
       })
       .catch(function(error) {
-        showCustomAlert("Sync failed. Check connection.");
+        console.error("Sync Error:", error);
+        showCustomAlert("Sync failed. Check connection and try again.");
         btn.disabled = false;
         btn.innerText = "Sign In";
       });
