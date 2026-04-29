@@ -282,7 +282,7 @@
     var db = firebase.firestore();
     
     // Tell Firebase to use a connection method compatible with older iPads
-    db.settings({ experimentalForceLongPolling: true });
+    db.settings({ experimentalForceLongPolling: true, merge: true });
 
     // --- 2. GLOBAL STATE ---
     var inactivityTimer;
