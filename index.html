@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-  
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-  eruda.init(); // This spawns the floating console button
-</script>
-  
+
 <head>
+  <script>
+    // Debug console (Eruda) only loads if you add ?debug=1 to the URL.
+    // Keeps it off by default so it's not running its network/DOM hooks
+    // in the background during normal kiosk use.
+    if (window.location.search.indexOf('debug=1') !== -1) {
+      var erudaScript = document.createElement('script');
+      erudaScript.src = 'https://cdn.jsdelivr.net/npm/eruda';
+      erudaScript.onload = function() { eruda.init(); };
+      document.head.appendChild(erudaScript);
+    }
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="no">
