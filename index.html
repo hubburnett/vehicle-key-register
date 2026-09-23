@@ -138,7 +138,7 @@
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
       <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>     
-      <p style="margin-top: 40px; font-size: 0.9rem; color: #888;">v1.14.6</p>
+      <p style="margin-top: 40px; font-size: 0.9rem; color: #888;">v1.14.5</p>
     </div>
 
     <div id="mainInterface">
@@ -185,11 +185,14 @@
 
           <div class="form-group">
             <label for="outVehicle">Vehicle</label>
-            <img id="vehiclePreview" src="" alt="Vehicle Preview" onerror="this.style.display='none';" style="display:none; width:100px; height:auto; margin-bottom:10px;">
+            <img id="vehiclePreview" src="" alt="Vehicle Preview" onerror="this.style.display='none';" style="display:none; width:200px; height:auto; margin-bottom:10px;">
             <select id="outVehicle">
               </select>
           </div>
-          <button class="btn btn-sign-out" id="btnSignOut">Sign Out</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn" id="btnAvail" style="background:#2e7d4f; flex:1;">Roster</button>
+            <button class="btn btn-sign-out" id="btnSignOut" style="flex:1;">Sign Out</button>
+          </div>
         </div>
 
         <div class="panel" id="signInPanel">
@@ -239,7 +242,16 @@
         <tbody></tbody>
       </table>
     </div>
-    
+
+    <div id="availViewer" style="display:none;">
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <button class="btn btn-back" id="btnAvailBack" style="width: auto; padding: 10px 20px; margin: 0; font-size: 1.2rem; display: inline-flex; justify-content: center; align-items: center;">⬅ Back</button>
+        <h2 style="margin: 0; flex-grow: 1; text-align: center; padding-right: 80px;">Roster</h2>
+      </div>
+      <p style="text-align:center; color:#555; margin-top:-10px;">Rostered use from Sproe. A red dot means it's booked right now.</p>
+      <div id="availContent"></div>
+    </div>
+
   <div class="modal-overlay" id="customModalOverlay">
     <div class="modal-box">
       <p id="customModalText"></p>
@@ -301,6 +313,143 @@
       "Meals on Wheels": "meals.jpg",
       "Personal Vehicle": "personal_vehicle.jpg"
     };
+
+    // --- 2b. SPROE public API (roster-aware sign-outs) -------------------------
+    // Before a key is signed out we ask Sproe whether that vehicle is rostered.
+    // FAIL-OPEN: any error/timeout just proceeds (never strand staff). A match is
+    // a BLOCK-WITH-OVERRIDE. Vehicles are matched to Sproe by name.
+    var SPROE_API_BASE = "https://sproe.fly.dev";                                 // PROD
+    var SPROE_API_KEY  = "sk_live_DsQvPDxD-d51m9xAOqd-bG1TnDBbM7Fl4NWHz-ab3r4";   // Hub prod, vehicles:read
+    var SPROE_LOOKAHEAD_HOURS = 8;   // check the rest of the working day
+    var sproeVehicleMap = {};        // kiosk vehicle name -> Sproe vehicle id
+
+    function sproeApiGet(path, cb) {  // cb(err, data); old-iPad-safe XHR
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", SPROE_API_BASE + path, true);
+        xhr.setRequestHeader("Authorization", "Bearer " + SPROE_API_KEY);
+        xhr.timeout = 6000;
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { cb(null, JSON.parse(xhr.responseText)); } catch (e) { cb(e, null); }
+          } else { cb(new Error("HTTP " + xhr.status), null); }
+        };
+        xhr.ontimeout = function() { cb(new Error("timeout"), null); };
+        xhr.onerror = function() { cb(new Error("network"), null); };
+        xhr.send();
+      } catch (e) { cb(e, null); }
+    }
+
+    function loadSproeVehicles() {
+      sproeApiGet("/api/v1/vehicles", function(err, list) {
+        if (err || !list || !list.length) return;   // fail-open: no map -> no checks
+        var map = {};
+        for (var i = 0; i < list.length; i++) map[list[i].name] = list[i].id;
+        sproeVehicleMap = map;
+      });
+    }
+
+    // Parse Sproe's wall-clock ISO ("2026-09-02T09:00:00") as LOCAL time — building
+    // the Date by parts avoids old Safari treating it as UTC.
+    function sproeParse(s) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || "");
+      return m ? new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], 0) : null;
+    }
+    function sproeIso(d) {
+      return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()) +
+             "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+    }
+    function sproeRange(startIso, endIso) {
+      var a = sproeParse(startIso), b = sproeParse(endIso);
+      return (a ? formatTime(a) : "?") + " - " + (b ? formatTime(b) : "?");
+    }
+
+    function sproeFirstName(s) { return (s || "").replace(/^\s+/, "").split(/\s+/)[0].toLowerCase(); }
+
+    // cb(conflicts|null). null = free / not tracked / unreachable (fail-open) / the
+    // only bookings are the signee's OWN shifts. signeeName lets us skip warning a
+    // worker about their own rostered vehicle (e.g. grabbing the key early, or
+    // holding it across the day) — only OTHER people's bookings warn.
+    function checkSproeRoster(vehicleName, signeeName, cb) {
+      var vid = sproeVehicleMap[vehicleName];
+      if (!vid) return cb(null);   // e.g. Personal Vehicle — not a Sproe fleet vehicle
+      var now = new Date();
+      var end = new Date(now.getTime() + SPROE_LOOKAHEAD_HOURS * 3600000);
+      var q = "?at=" + encodeURIComponent(sproeIso(now)) + "&to=" + encodeURIComponent(sproeIso(end));
+      var mine = sproeFirstName(signeeName);
+      sproeApiGet("/api/v1/vehicles/" + vid + "/availability" + q, function(err, data) {
+        if (err || !data || data.available) return cb(null);   // fail-open / free
+        var others = [];
+        for (var i = 0; i < data.conflicts.length; i++) {
+          if (sproeFirstName(data.conflicts[i].worker) !== mine) others.push(data.conflicts[i]);
+        }
+        cb(others.length ? others : null);   // null when every booking is the signee's own
+      });
+    }
+
+    // Block-with-override modal. cb(true) = sign out anyway, cb(false) = cancel.
+    function showRosterConflict(vehicle, conflicts, cb) {
+      var lines = [];
+      for (var i = 0; i < conflicts.length && i < 3; i++) {
+        var c = conflicts[i];
+        lines.push((c.worker || "Someone") + " has " + vehicle + " booked " +
+                   sproeRange(c.starts_at, c.ends_at));
+      }
+      resetModal();
+      modalText.innerText = "⚠ Rostered vehicle\n\n" + lines.join("\n") +
+                           "\n\nSign this vehicle out anyway?";
+      btnModalCancel.style.display = 'block';
+      btnModalOK.innerText = 'Sign out anyway';
+      btnModalOK.style.background = '#d9534f';
+      modalOverlay.style.display = 'block';
+      var cancelH = function(e){ if(e&&e.type==='touchend')e.preventDefault();
+        btnModalCancel.onclick=null; btnModalCancel.ontouchend=null; closeCustomModal(); cb(false); };
+      var okH = function(e){ if(e&&e.type==='touchend')e.preventDefault();
+        btnModalOK.onclick=null; btnModalOK.ontouchend=null; closeCustomModal(); cb(true); };
+      btnModalCancel.onclick = cancelH; btnModalCancel.ontouchend = cancelH;
+      btnModalOK.onclick = okH; btnModalOK.ontouchend = okH;
+    }
+
+    function sproeEsc(s) {
+      return (s == null ? "" : String(s)).replace(/[&<>"]/g, function(ch) {
+        return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[ch];
+      });
+    }
+
+    // --- "Available today" read-only view (rostered vehicle use from Sproe) ---
+    function showAvailViewer() {
+      document.getElementById('mainInterface').style.display = 'none';
+      document.getElementById('logViewer').style.display = 'none';
+      document.getElementById('availViewer').style.display = 'block';
+      var content = document.getElementById('availContent');
+      content.innerHTML = '<p style="text-align:center;color:#888;">Loading...</p>';
+      sproeApiGet("/api/v1/vehicles/schedule", function(err, list) {
+        if (err || !list) {
+          content.innerHTML = '<p style="text-align:center;color:#c0392b;">Couldn’t reach the roster right now.</p>';
+          return;
+        }
+        var now = new Date(), html = "";
+        for (var i = 0; i < list.length; i++) {
+          var v = list[i];
+          html += '<div style="border:1px solid #ccc;border-radius:6px;padding:14px;margin-bottom:12px;">';
+          html += '<div style="font-weight:bold;font-size:1.3rem;margin-bottom:4px;">' + sproeEsc(v.name) + '</div>';
+          if (!v.bookings || !v.bookings.length) {
+            html += '<div style="color:#2e7d4f;font-size:1.1rem;">Free all day</div>';
+          } else {
+            for (var j = 0; j < v.bookings.length; j++) {
+              var b = v.bookings[j], a = sproeParse(b.starts_at), e = sproeParse(b.ends_at);
+              var busyNow = a && e && now >= a && now < e;
+              html += '<div style="font-size:1.1rem;' + (busyNow ? 'color:#c0392b;font-weight:bold;' : 'color:#555;') + '">' +
+                      (busyNow ? '● ' : '') + sproeRange(b.starts_at, b.ends_at) +
+                      ' — ' + sproeEsc(b.worker || "Unassigned") + '</div>';
+            }
+          }
+          html += '</div>';
+        }
+        content.innerHTML = html || '<p style="text-align:center;color:#888;">No vehicles set up.</p>';
+      });
+    }
 
     // --- 3. CUSTOM MODAL SYSTEM ---
     var modalOverlay = document.getElementById('customModalOverlay');
@@ -507,6 +656,7 @@
       document.getElementById('welcomeScreen').style.display = 'block';
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
+      document.getElementById('availViewer').style.display = 'none';
       closeCustomModal(); // Force close any open modals
     }
 
@@ -515,6 +665,7 @@
       document.getElementById('welcomeScreen').style.display = 'none';
       document.getElementById('mainInterface').style.display = 'block';
       document.getElementById('logViewer').style.display = 'none';
+      document.getElementById('availViewer').style.display = 'none';
 
       // Reset fields
       document.getElementById('outName').value = "";
@@ -687,17 +838,30 @@
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
+      // --- Sproe roster gate: block-with-override if the vehicle is rostered ---
+      btn.disabled = true;
+      btn.innerText = "Checking...";
+      checkSproeRoster(vehicle, name, function(conflicts) {
+        btn.disabled = false;
+        btn.innerText = "Sign Out";
+        if (conflicts && conflicts.length) {
+          showRosterConflict(vehicle, conflicts, function(override) {
+            if (override) doSignOut(logEntry, btn);   // supervisor override
+          });
+        } else {
+          doSignOut(logEntry, btn);   // free, or Sproe unreachable (fail-open)
+        }
+      });
+    });
+
+    function doSignOut(logEntry, btn) {
       btn.disabled = true;
       btn.innerText = "Processing...";
-
-      // Create a 5-second timeout
       var timeout = new Promise(function(resolve, reject) {
         setTimeout(function() {
           reject(new Error("Timeout: The network connection is too slow or offline."));
         }, 5000);
       });
-
-      // Race Firebase against the timeout
       Promise.race([
         db.collection("keyLogs").add(logEntry),
         timeout
@@ -710,13 +874,13 @@
         });
       })
       .catch(function(error) {
-        console.error("Error:", error);        
+        console.error("Error:", error);
         btn.disabled = false;
         btn.innerText = "Sign Out";
         showCustomAlert("Network Error. Reloading application...", function() { window.location.reload(); });
-        setTimeout(function() { window.location.reload(); }, 3000);
+        setTimeout(function() { window.location.reload(); }, 3000);
       });
-    });
+    }
 
     // --- 9. SIGN IN LOGIC ---
     function updateReturnNames() {
@@ -916,7 +1080,9 @@
       renderLogTable(logData); 
     });
 
-    document.getElementById('btnBack').addEventListener('click', setupMainInterface);  
+    document.getElementById('btnBack').addEventListener('click', setupMainInterface);
+    document.getElementById('btnAvail').addEventListener('click', showAvailViewer);
+    document.getElementById('btnAvailBack').addEventListener('click', setupMainInterface);  
     document.getElementById('outVehicle').addEventListener('change', updateVehicleImage);
 
     document.getElementById('outDestinationText').addEventListener('keydown', function(e) {
@@ -937,6 +1103,8 @@
 
     // Start App
     setupWelcomeScreen();
+    loadSproeVehicles();          // build the kiosk->Sproe vehicle map (fail-soft)
+    setInterval(loadSproeVehicles, 30 * 60 * 1000);  // refresh every 30 min
   </script>
 </body>
 </html>
