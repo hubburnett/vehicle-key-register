@@ -138,7 +138,7 @@
       <img src="hub_logo.png" onerror="this.style.display='none';" alt="HUB LOGO">
       <h2>VEHICLE KEYS SIGN IN / SIGN OUT REGISTER</h2>
       <button id="continueBtn" style="margin-top:20px;">Tap to Continue</button>     
-      <p style="margin-top: 40px; font-size: 0.9rem; color: #888;">v1.14.6</p>
+      <p style="margin-top: 40px; font-size: 0.9rem; color: #888;">v1.14.7</p>
     </div>
 
     <div id="mainInterface">
@@ -248,6 +248,7 @@
         <button class="btn btn-back" id="btnAvailBack" style="width: auto; padding: 10px 20px; margin: 0; font-size: 1.2rem; display: inline-flex; justify-content: center; align-items: center;">⬅ Back</button>
         <h2 style="margin: 0; flex-grow: 1; text-align: center; padding-right: 80px;">Roster</h2>
       </div>
+      <div id="availNav"></div>
       <div id="availContent"></div>
     </div>
 
@@ -315,8 +316,11 @@
 
     // --- 2b. SPROE public API (roster-aware sign-outs) -------------------------
     // Before a key is signed out we ask Sproe whether that vehicle is rostered.
-    // FAIL-OPEN: any error/timeout just proceeds (never strand staff). A match is
-    // a BLOCK-WITH-OVERRIDE. Vehicles are matched to Sproe by name.
+    // FAIL-OPEN: any error/timeout just proceeds (never strand staff). Because a
+    // vehicle can have TWO keys (one worker may hold a key for days while others
+    // rotate the second), we NEVER block — instead we ADVISE: if the vehicle is
+    // rostered later, we tell the person their return-by time ("back by 2pm").
+    // Vehicles are matched to Sproe by name.
     var SPROE_API_BASE = "https://api.sproe.app";                                 // PROD via Cloudflare (old-iPad TLS)
     var SPROE_API_KEY  = "sk_live_DsQvPDxD-d51m9xAOqd-bG1TnDBbM7Fl4NWHz-ab3r4";   // Hub prod, vehicles:read
     var SPROE_LOOKAHEAD_HOURS = 8;   // check the rest of the working day
@@ -366,6 +370,22 @@
 
     function sproeFirstName(s) { return (s || "").replace(/^\s+/, "").split(/\s+/)[0].toLowerCase(); }
 
+    // Roster-view date helpers (old-iPad-safe; no Intl/toLocale).
+    function sproeDateKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()); }
+    function sproeDateLabel(d) {
+      var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return days[d.getDay()] + ' ' + d.getDate() + ' ' + mons[d.getMonth()];
+    }
+    function sproeDuration(startIso, endIso) {
+      var a = sproeParse(startIso), b = sproeParse(endIso);
+      if (!a || !b) return "";
+      var mins = Math.round((b - a) / 60000);
+      if (mins <= 0) return "";
+      var h = Math.floor(mins / 60), m = mins % 60;
+      return h ? (m ? h + "h " + m + "m" : h + "h") : m + "m";
+    }
+
     // cb(conflicts|null). null = free / not tracked / unreachable (fail-open) / the
     // only bookings are the signee's OWN shifts. signeeName lets us skip warning a
     // worker about their own rostered vehicle (e.g. grabbing the key early, or
@@ -387,20 +407,35 @@
       });
     }
 
-    // Block-with-override modal. cb(true) = sign out anyway, cb(false) = cancel.
-    function showRosterConflict(vehicle, conflicts, cb) {
-      var lines = [];
-      for (var i = 0; i < conflicts.length && i < 3; i++) {
-        var c = conflicts[i];
-        lines.push((c.worker || "Someone") + " has " + vehicle + " booked " +
-                   sproeRange(c.starts_at, c.ends_at));
+    // Non-blocking advisory. Two keys per vehicle means we never stop a sign-out —
+    // we just warn about the return deadline. cb(true) = proceed, cb(false) = cancel.
+    // `others` are OTHER people's overlapping bookings (signee's own already removed).
+    function showRosterAdvisory(vehicle, others, cb) {
+      var now = new Date(), upcoming = [], activeNow = [];
+      for (var i = 0; i < others.length; i++) {
+        var a = sproeParse(others[i].starts_at), e = sproeParse(others[i].ends_at);
+        if (!a || !e) continue;
+        if (a > now) upcoming.push(a);
+        else if (now < e) activeNow.push(e);
+      }
+      upcoming.sort(function(x, y){ return x - y; });
+      var msg;
+      if (upcoming.length) {
+        msg = "🔑 " + vehicle + " is booked from " + formatTime(upcoming[0]) +
+              ".\n\nPlease have it back by " + formatTime(upcoming[0]) + ".";
+      } else if (activeNow.length) {
+        var latest = activeNow[0];
+        for (var k = 1; k < activeNow.length; k++) if (activeNow[k] > latest) latest = activeNow[k];
+        msg = "⚠ " + vehicle + " is rostered until " + formatTime(latest) +
+              " and may already be in use.";
+      } else {
+        return cb(true);   // nothing relevant upcoming -> proceed silently
       }
       resetModal();
-      modalText.innerText = "⚠ Rostered vehicle\n\n" + lines.join("\n") +
-                           "\n\nSign this vehicle out anyway?";
+      modalText.innerText = msg;
       btnModalCancel.style.display = 'block';
-      btnModalOK.innerText = 'Sign out anyway';
-      btnModalOK.style.background = '#d9534f';
+      btnModalOK.innerText = 'Sign out';
+      btnModalOK.style.background = '#5cb85c';
       modalOverlay.style.display = 'block';
       var cancelH = function(e){ if(e&&e.type==='touchend')e.preventDefault();
         btnModalCancel.onclick=null; btnModalCancel.ontouchend=null; closeCustomModal(); cb(false); };
@@ -416,32 +451,69 @@
       });
     }
 
-    // --- "Available today" read-only view (rostered vehicle use from Sproe) ---
+    // --- Roster view: when each vehicle is booked, and for how long. -----------
+    // Deliberately shows NO names (staff/participant) — just the booked time
+    // windows per vehicle, with day navigation (◀ / ▶) so staff can look ahead.
+    var sproeViewDate = null;   // the day currently shown
+
     function showAvailViewer() {
       document.getElementById('mainInterface').style.display = 'none';
       document.getElementById('logViewer').style.display = 'none';
       document.getElementById('availViewer').style.display = 'block';
+      var t = new Date();
+      sproeViewDate = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+      renderAvailRoster();
+    }
+
+    function sproeShiftDay(delta) {
+      if (!sproeViewDate) return;
+      sproeViewDate = new Date(sproeViewDate.getFullYear(), sproeViewDate.getMonth(),
+                               sproeViewDate.getDate() + delta);
+      renderAvailRoster();
+    }
+
+    function renderAvailRoster() {
+      var isToday = sproeDateKey(sproeViewDate) === sproeDateKey(new Date());
+      var nav = document.getElementById('availNav');
+      nav.innerHTML =
+        '<div style="display:flex;align-items:center;margin-bottom:16px;">' +
+          '<button class="btn" id="availPrev" style="width:auto;padding:12px 18px;margin:0;background:#6c757d;font-size:1.4rem;">◀</button>' +
+          '<div style="flex:1;text-align:center;font-size:1.3rem;font-weight:bold;">' +
+            sproeDateLabel(sproeViewDate) + (isToday ? ' · Today' : '') +
+          '</div>' +
+          '<button class="btn" id="availNext" style="width:auto;padding:12px 18px;margin:0;background:#6c757d;font-size:1.4rem;">▶</button>' +
+        '</div>';
+      var prev = document.getElementById('availPrev'), next = document.getElementById('availNext');
+      var pH = function(e){ if(e&&e.type==='touchend')e.preventDefault(); sproeShiftDay(-1); };
+      var nH = function(e){ if(e&&e.type==='touchend')e.preventDefault(); sproeShiftDay(1); };
+      prev.onclick = pH; prev.ontouchend = pH;
+      next.onclick = nH; next.ontouchend = nH;
+
       var content = document.getElementById('availContent');
-      content.innerHTML = '<p style="text-align:center;color:#888;">Loading...</p>';
-      sproeApiGet("/api/v1/vehicles/schedule", function(err, list) {
+      content.innerHTML = '<p style="text-align:center;color:#888;">Loading…</p>';
+      sproeApiGet("/api/v1/vehicles/schedule?date=" + sproeDateKey(sproeViewDate), function(err, list) {
         if (err || !list) {
           content.innerHTML = '<p style="text-align:center;color:#c0392b;">Couldn’t reach the roster right now.</p>';
           return;
         }
-        var now = new Date(), html = "";
+        var now = new Date(), showLive = isToday, html = "";
         for (var i = 0; i < list.length; i++) {
           var v = list[i];
           html += '<div style="border:1px solid #ccc;border-radius:6px;padding:14px;margin-bottom:12px;">';
-          html += '<div style="font-weight:bold;font-size:1.3rem;margin-bottom:4px;">' + sproeEsc(v.name) + '</div>';
+          html += '<div style="font-weight:bold;font-size:1.3rem;margin-bottom:6px;">' + sproeEsc(v.name) + '</div>';
           if (!v.bookings || !v.bookings.length) {
             html += '<div style="color:#2e7d4f;font-size:1.1rem;">Free all day</div>';
           } else {
             for (var j = 0; j < v.bookings.length; j++) {
               var b = v.bookings[j], a = sproeParse(b.starts_at), e = sproeParse(b.ends_at);
-              var busyNow = a && e && now >= a && now < e;
-              html += '<div style="font-size:1.1rem;' + (busyNow ? 'color:#c0392b;font-weight:bold;' : 'color:#555;') + '">' +
+              var busyNow = showLive && a && e && now >= a && now < e;
+              var dur = sproeDuration(b.starts_at, b.ends_at);
+              html += '<div style="font-size:1.15rem;padding:2px 0;' +
+                      (busyNow ? 'color:#c0392b;font-weight:bold;' : 'color:#444;') + '">' +
                       (busyNow ? '● ' : '') + sproeRange(b.starts_at, b.ends_at) +
-                      ' — ' + sproeEsc(b.worker || "Unassigned") + '</div>';
+                      (dur ? ' <span style="color:#888;">· ' + dur + '</span>' : '') +
+                      (busyNow ? ' <span style="color:#c0392b;">(out now)</span>' : '') +
+                      '</div>';
             }
           }
           html += '</div>';
@@ -837,15 +909,15 @@
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
-      // --- Sproe roster gate: block-with-override if the vehicle is rostered ---
+      // --- Sproe roster advisory: warn (don't block) about the return deadline ---
       btn.disabled = true;
       btn.innerText = "Checking...";
       checkSproeRoster(vehicle, name, function(conflicts) {
         btn.disabled = false;
         btn.innerText = "Sign Out";
         if (conflicts && conflicts.length) {
-          showRosterConflict(vehicle, conflicts, function(override) {
-            if (override) doSignOut(logEntry, btn);   // supervisor override
+          showRosterAdvisory(vehicle, conflicts, function(proceed) {
+            if (proceed) doSignOut(logEntry, btn);   // advisory only — proceed on OK
           });
         } else {
           doSignOut(logEntry, btn);   // free, or Sproe unreachable (fail-open)
